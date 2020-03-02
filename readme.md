@@ -1,0 +1,4 @@
+- [x] Init the repo with "Hello, World"
+- [ ] Upgreade skills with rust
+- [ ] Make simple http/websocket server
+- [ ] Make the game
