@@ -9,3 +9,4 @@ rand = "^0.7.3"
 hyper="0.13"
 tokio = { version = "0.2", features = ["full"] }
 futures = "0.3"
+mime = "0.3.16"
