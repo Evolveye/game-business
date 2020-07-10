@@ -1,20 +1,19 @@
 import React from "react"
-import logo from "./logo.svg"
+
+import WS from "../WS.js"
+
 import "./App.css"
 
-export default () => <div className="App">
-  <header className="App-header">
-    <img src={logo} className="App-logo" alt="logo" />
-    <p>
-      Edit <code>src/App.js</code> and save to reload.
-    </p>
-    <a
-      className="App-link"
-      href="https://reactjs.org"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Learn React
-    </a>
-  </header>
-</div>
+export default class App extends React.Component {
+  ref = React.createRef()
+  ws = new WS( `ws://localhost:8080` )
+
+  constructor( props ) {
+    super( props )
+
+    this.ws.emit( `test`, `wysyłam testową wiadomość` )
+    this.ws.on( `test`, console.log )
+  }
+
+  render = () => <canvas ref={this.ref}/>
+}
