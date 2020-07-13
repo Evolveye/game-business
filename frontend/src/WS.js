@@ -1,6 +1,10 @@
 export default class RoomedWebSocked extends WebSocket {
+  #listeners = new Map()
+
   emit( event, data ) {
-    const send = () => this.send( JSON.stringify( { event, data } ) )
+    const msg = data ? { [event]:data } : event
+    const send = () => this.send( JSON.stringify( msg ) )
+
     if (this.readyState !== 1) {
       this.addEventListener( `open`, send )
     } else {
@@ -9,6 +13,13 @@ export default class RoomedWebSocked extends WebSocket {
   }
 
   on( event, listener ) {
-    this.addEventListener( `message`, ({ data }) => listener( JSON.parse( data ) ) )
+    this.#listeners.set( event, listener )
+  }
+
+  onmessage = ({ data:jsonData }) => {
+    const { event, data } = JSON.parse( jsonData )
+
+    if (this.#listeners.has( event )) this.#listeners.get( event )( { [event]:data } )
+    else console.warn( `Unhandled event: ${event}` )
   }
 }

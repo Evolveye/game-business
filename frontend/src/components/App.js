@@ -11,9 +11,13 @@ export default class App extends React.Component {
   constructor( props ) {
     super( props )
 
-    this.ws.emit( `test`, `wysyłam testową wiadomość` )
-    this.ws.on( `test`, console.log )
+    this.ws.emit( `ping` )
+    this.ws.on( `pong`, data => {
+      console.log( data )
+      this.ws.emit( `searchGame`, { Square:3 } )
+    } )
+    this.ws.on( `founded game`, console.log )
   }
 
-  render = () => <canvas ref={this.ref}/>
+  render = () => <canvas ref={this.ref} />
 }
