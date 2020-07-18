@@ -1,5 +1,5 @@
 import React from "react"
-import { Dom } from "react-three-fiber"
+import { Text } from "drei"
 
 export class Box extends React.Component {
   // This reference will give us direct access to the mesh
@@ -10,8 +10,8 @@ export class Box extends React.Component {
   }
 
   update = () => {
-    /** @type {import("three").Mesh} */
-    const cube = this.mesh.current
+    // /** @type {import("three").Mesh} */
+    // const cube = this.mesh.current
 
     // cube.rotateY( 0.01 )
     // cube.position.z += Math.sin( cube.position.z + 1 ) * 0.01
@@ -31,7 +31,6 @@ export class Box extends React.Component {
 
   render() {
     const { position, color, sizes } = this.props
-    const scale = .5
 
     return <mesh
       // scale={[ scale, scale, scale ]}
@@ -39,7 +38,7 @@ export class Box extends React.Component {
       position={position}
       onClick={this.onclick}
     >
-      <Dom><span style="color:red">Test</span></Dom>
+      <Text>Test</Text>
       <boxBufferGeometry attach="geometry" args={sizes || [1, .5, 2]} />
       <meshStandardMaterial
         attach="material"

@@ -1,13 +1,11 @@
-import React, { useRef, useEffect } from "react"
-import { Canvas, extend, useThree } from "react-three-fiber"
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
+import React from "react"
+import { Canvas, useThree } from "react-three-fiber"
+import { OrbitControls } from "drei"
 
 import { Box } from "./models.js"
 import WS from "../WS.js"
 
 import "./App.css"
-
-extend( { OrbitControls } )
 
 export default class App extends React.Component {
   ws = new WS( `ws://localhost:8080` )
@@ -88,7 +86,7 @@ export default class App extends React.Component {
       }
 
       // console.log( { x, z, type, id, name } )
-      console.log( position )
+      // console.log( position )
 
       if (true || i % 4 !== 0) {
         if (x === 1) position[ 0 ] -= .5
@@ -133,13 +131,9 @@ export default class App extends React.Component {
 }
 
 function Camera() {
-  const cameraRef = useRef()
-  const { camera, gl:{ domElement }, setDefaultCamera } = useThree()
+  const { camera } = useThree()
 
   camera.position.set( 0, 6, 0 )
 
-  return <orbitControls
-    ref={cameraRef}
-    args={[ camera, domElement ]}
-  />
+  return <OrbitControls />
 }
