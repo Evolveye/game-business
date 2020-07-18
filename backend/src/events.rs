@@ -22,6 +22,7 @@ impl Room for GameRoom {
         let board = if let Some( board ) = self.game.find_opened_board( &board_type ) {
           board
         } else {
+          println!( " i Create new board" );
           self.game.create_board( board_type )
         };
 

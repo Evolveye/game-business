@@ -19,7 +19,7 @@ export default class RoomedWebSocked extends WebSocket {
   onmessage = ({ data:jsonData }) => {
     const { event, data } = JSON.parse( jsonData )
 
-    if (this.#listeners.has( event )) this.#listeners.get( event )( { [event]:data } )
+    if (this.#listeners.has( event )) this.#listeners.get( event )( data )
     else console.warn( `Unhandled event: ${event}` )
   }
 }
