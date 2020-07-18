@@ -1,5 +1,5 @@
 import React from "react"
-// import { useFrame } from "react-three-fiber"
+import { Dom } from "react-three-fiber"
 
 export class Box extends React.Component {
   // This reference will give us direct access to the mesh
@@ -30,15 +30,17 @@ export class Box extends React.Component {
   }
 
   render() {
-    const { position, color } = this.props
+    const { position, color, sizes } = this.props
+    const scale = .5
 
     return <mesh
-      scale={[ .9, .9, .9 ]}
+      // scale={[ scale, scale, scale ]}
       ref={this.mesh}
       position={position}
       onClick={this.onclick}
     >
-      <boxBufferGeometry attach="geometry" args={[1, .5, 1]} />
+      <Dom><span style="color:red">Test</span></Dom>
+      <boxBufferGeometry attach="geometry" args={sizes || [1, .5, 2]} />
       <meshStandardMaterial
         attach="material"
         color={color || this.getRandomColor()}

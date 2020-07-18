@@ -1,10 +1,13 @@
 import React, { useRef, useEffect } from "react"
-import { Canvas, useThree } from "react-three-fiber"
+import { Canvas, extend, useThree } from "react-three-fiber"
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { Box } from "./models.js"
 import WS from "../WS.js"
 
 import "./App.css"
+
+extend( { OrbitControls } )
 
 export default class App extends React.Component {
   ws = new WS( `ws://localhost:8080` )
@@ -66,12 +69,17 @@ export default class App extends React.Component {
     const { loadedBoard } = this.state
     const { size, tiles } = loadedBoard
     const paintedTiles = {}
+    const positionMultiplier = 1.1
 
     for (let i = 0, x = 1, z = 1; i < (size ** 2 - (size - 2) ** 2); ++i) {
       const { id, type, name } = tiles[ i ]
-      let color = 0xffffff
-
-      console.log( { x, z, type, id, name } )
+      let color = 0x33333333
+      let sizes = []
+      let position = [
+        (x - (size + 2) / 2) * positionMultiplier,
+        -(x + z) * 0 - 3,
+        (z - (size + 2) / 2) * positionMultiplier,
+      ]
 
       if (id) {
         if (!(id in paintedTiles)) paintedTiles[ id ] = Math.floor( Math.random() * 0xffffff )
@@ -79,14 +87,32 @@ export default class App extends React.Component {
         color = paintedTiles[ id ]
       }
 
+      // console.log( { x, z, type, id, name } )
+      console.log( position )
+
+      if (true || i % 4 !== 0) {
+        if (x === 1) position[ 0 ] -= .5
+        if (x === size) position[ 0 ] += .5
+        if (z === 1) position[ 2 ] -= .5
+        if (z === size) position[ 2 ] += .5
+      }
+
+      if (i % 4 === 0) sizes = [ 2, .5, 2 ]
+      else if (x !== size && z === 1) {
+        sizes = [ 1, .5, 2 ]
+      } else if (x === size && z !== size) {
+        sizes = [ 2, .5, 1 ]
+      } else if (x !== 1 && z === size) {
+        sizes = [ 1, .5, 2 ]
+      } else if (x === 1 && z !== 1) {
+        sizes = [ 2, .5, 1 ]
+      }
+
       boxes.push( <Box
         key={`${x};${z}`}
+        sizes={sizes}
         color={color}
-        position={[
-          -size / 2 + x,
-          -(x + z) * 0 - 3,
-          -size / 2 + z,
-        ]}
+        position={position}
       /> )
 
       if (x !== size && z === 1) x++
@@ -108,15 +134,12 @@ export default class App extends React.Component {
 
 function Camera() {
   const cameraRef = useRef()
-  const { setDefaultCamera } = useThree()
+  const { camera, gl:{ domElement }, setDefaultCamera } = useThree()
 
-  useEffect( () => {
-    cameraRef.current.lookAt( 0, 0, 0 )
+  camera.position.set( 0, 6, 0 )
 
-    setDefaultCamera( cameraRef.current )
-  } )
-
-  return <perspectiveCamera ref={cameraRef}
-    position={[ 0, 5, 10 ]}
+  return <orbitControls
+    ref={cameraRef}
+    args={[ camera, domElement ]}
   />
 }
