@@ -1,9 +1,14 @@
 import React from "react"
-import { Text } from "drei"
+import { Html, Text } from "drei"
 
-export class Box extends React.Component {
+export class Tile extends React.Component {
   // This reference will give us direct access to the mesh
   mesh = React.createRef()
+
+  state = {
+    color: this.props.color || 0xaaaaaa,
+    rotate: this.props.rotate || 0,
+  }
 
   componentDidMount() {
     requestAnimationFrame( this.update )
@@ -15,6 +20,8 @@ export class Box extends React.Component {
 
     // cube.rotateY( 0.01 )
     // cube.position.z += Math.sin( cube.position.z + 1 ) * 0.01
+
+    // this.setState( ({ rotate }) => ({ rotate:rotate + 0.5 }) )
 
     requestAnimationFrame( this.update )
   }
@@ -30,16 +37,27 @@ export class Box extends React.Component {
   }
 
   render() {
-    const { position, color, sizes } = this.props
+    const { position, sizes, isCorner } = this.props
+    const size = sizes || (isCorner ? [ 2, .5, 2 ] : [1, .5, 2])
+    const { rotate, color } = this.state
 
     return <mesh
       // scale={[ scale, scale, scale ]}
+      rotation={[ 0, isCorner ? 0 : Math.PI / 180 * rotate, 0 ]}
       ref={this.mesh}
       position={position}
       onClick={this.onclick}
     >
-      <Text>Test</Text>
-      <boxBufferGeometry attach="geometry" args={sizes || [1, .5, 2]} />
+      <Text
+        scale={[ 1, -1, 1 ]}
+        rotation={[ Math.PI / 180 * 90, 0, isCorner ? Math.PI / 180 * (rotate * 90 + 45) : 0 ]}
+        fontSize={0.5}
+        position={[ 0, 0.3, 0 ]}
+        color="black"
+      >
+        Text
+      </Text>
+      <boxBufferGeometry attach="geometry" args={size} />
       <meshStandardMaterial
         attach="material"
         color={color || this.getRandomColor()}
