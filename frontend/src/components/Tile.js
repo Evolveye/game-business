@@ -1,7 +1,7 @@
 import React from "react"
-import { Html, Text } from "drei"
+import { Html, Text, Box } from "drei"
 
-export class Tile extends React.Component {
+class Tile extends React.Component {
   // This reference will give us direct access to the mesh
   mesh = React.createRef()
 
@@ -63,5 +63,55 @@ export class Tile extends React.Component {
         color={color || this.getRandomColor()}
       />
     </mesh>
+  }
+}
+
+export class TileToBuy extends Tile {
+  render() {
+    const { position, isCorner } = this.props
+    const { rotate, color } = this.state
+    const textAttrs = {
+      scale: [ 1, -1, 1 ],
+      rotation: [ Math.PI / 180 * 90, 0, isCorner ? Math.PI / 180 * (rotate * 90 + 45) : 0 ],
+      color: `black`,
+      fontSize: 0.2,
+    }
+
+    return <group
+      rotation={[ 0, isCorner ? 0 : Math.PI / 180 * rotate, 0 ]}
+      position={position}
+    >
+      <Text {...textAttrs} position={[ 0, 0.06, -0.5 ]}>Miasto</Text>
+      <Text {...textAttrs} position={[ 0, 0.06, 0.8 ]}>Cena $</Text>
+      <Box args={[ 1, .1, 1.6 ]} position={[ 0, 0, 0.2 ]}>
+        <meshStandardMaterial attach="material" color={0xeeeeee} />
+      </Box>
+      <Box args={[ 1, .1, 0.3 ]} position={[ 0, 0, -0.8 ]}>
+        <meshStandardMaterial attach="material" color={color} />
+      </Box>
+    </group>
+  }
+}
+
+export class CornerTile extends Tile {
+  render() {
+    const { position, isCorner } = this.props
+    const { rotate } = this.state
+    const textAttrs = {
+      scale: [ 1, -1, 1 ],
+      rotation: [ Math.PI / 180 * 90, 0, isCorner ? Math.PI / 180 * (rotate * 90 + 45) : 0 ],
+      color: `black`,
+      fontSize: 0.5,
+    }
+
+    return <group
+      rotation={[ 0, isCorner ? 0 : Math.PI / 180 * rotate, 0 ]}
+      position={position}
+    >
+      <Text {...textAttrs} position={[ 0, 0.06, 0 ]}>Text</Text>
+      <Box args={[ 2, .1, 2 ]}>
+        <meshStandardMaterial attach="material" color={0x333333} />
+      </Box>
+    </group>
   }
 }

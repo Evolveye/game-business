@@ -2,7 +2,7 @@ import React from "react"
 import { Canvas, useThree } from "react-three-fiber"
 import { OrbitControls } from "drei"
 
-import { Tile } from "./Tile.js"
+import { TileToBuy, CornerTile } from "./Tile.js"
 import WS from "../WS.js"
 
 import "./App.css"
@@ -109,13 +109,23 @@ export default class App extends React.Component {
         rotate = 270
       }
 
-      boxes.push( <Tile
-        isCorner={isCorner}
-        key={`${x};${z}`}
-        rotate={rotate}
-        color={color}
-        position={position}
-      /> )
+      if (isCorner) {
+        boxes.push( <CornerTile
+          isCorner={isCorner}
+          key={`${x};${z}`}
+          rotate={rotate}
+          color={color}
+          position={position}
+        /> )
+      } else {
+        boxes.push( <TileToBuy
+          isCorner={isCorner}
+          key={`${x};${z}`}
+          rotate={rotate}
+          color={color}
+          position={position}
+        /> )
+      }
 
       if (x !== size && z === 1) x++
       else if (x === size && z !== size) z++
