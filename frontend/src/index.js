@@ -2,7 +2,7 @@ import React from "react"
 import ReactDOM from "react-dom"
 import App from "./components/App"
 
-import * as serviceWorker from "./serviceWorker"
+import * as serviceWorker from "./utils/serviceWorker"
 
 import "./normalize.css"
 import "./index.css"

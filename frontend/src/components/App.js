@@ -1,9 +1,10 @@
 import React from "react"
 import { Canvas, useThree } from "react-three-fiber"
-import { OrbitControls } from "drei"
+import { OrbitControls, Box } from "drei"
 
 import { TileToBuy, CornerTile } from "./Tile.js"
-import WS from "../WS.js"
+import WS from "../utils/WS.js"
+import Color from "../utils/colors.js"
 
 import "./App.css"
 
@@ -52,7 +53,9 @@ export default class App extends React.Component {
         case `jail`:
         case `parking`:
         case `goToJail`: performedTiles.push( { type:name } ); break
-        case `city`: performedTiles.push( { type:`city`, id:values[ 0 ], name:values[ 1 ] } ); break
+        case `city`: performedTiles.push( {
+          type:`city`, id:values[ 0 ], color:values[ 1 ], name:values[ 2 ]
+        } ); break
       }
     }
 
@@ -71,21 +74,30 @@ export default class App extends React.Component {
 
     let lastCorner = 0
     for (let i = 0, x = 1, z = 1; i < (size ** 2 - (size - 2) ** 2); ++i) {
-      const { id, type, name } = tiles[ i ]
-      let color = 0x33333333
+      const { id, color, type, name } = tiles[ i ]
       let rotate
       let isCorner = false
       let position = [
         (x - (size + 1) / 2) * positionMultiplier,
-        -(x + z) * 0 - 3,
+        0,
         (z - (size + 1) / 2) * positionMultiplier,
       ]
 
-      if (id) {
-        if (!(id in paintedTiles)) paintedTiles[ id ] = Math.floor( Math.random() * 0xffffff )
+      // let color = 0x33333333
+      // if (id) {
+      //   if (!(id in paintedTiles)) {
+      //     let i = 0
+      //     let color = Color.getPaletteRandom()
 
-        color = paintedTiles[ id ]
-      }
+      //     while (i++ < 99 && Object.values( paintedTiles ).includes( color )) {
+      //       color = Color.getPaletteRandom()
+      //     }
+
+      //     paintedTiles[ id ] = color
+      //   }
+
+      //   color = paintedTiles[ id ]
+      // }
 
       if (true || i % 4 !== 0) {
         if (x === 1) position[ 0 ] -= .5
@@ -98,7 +110,6 @@ export default class App extends React.Component {
         isCorner = true
         lastCorner++
         rotate = lastCorner
-        console.log(``)
       } else if (x !== size && z === 1) {
         rotate = 180
       } else if (x === size && z !== size) {
@@ -137,8 +148,12 @@ export default class App extends React.Component {
       <Canvas className="game_canvas">
         <ambientLight />
         <Camera />
-        <pointLight position={[ 0, 2, 6 ]} />
+        <pointLight position={[ 6, 2, 6 ]} />
         {boxes}
+        {/* <Box args={[ 7.5, 0.1, 7.5 ]} position={[ 0, -0.1, 0 ]}> */}
+        <Box args={[ 20, 0.1, 20 ]} position={[ 0, -0.05, 0 ]}>
+          <lineBasicMaterial attach="material" color={0x202020} />
+        </Box>
       </Canvas>
     </>
   }
@@ -147,7 +162,7 @@ export default class App extends React.Component {
 function Camera() {
   const { camera } = useThree()
 
-  camera.position.set( 0, 6, 0 )
+  camera.position.set( 0, 10, 0 )
 
   return <OrbitControls />
 }

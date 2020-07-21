@@ -41,30 +41,30 @@ impl Board {
           // First edge
           Tile::new( TileType::Start ),
 
-          Tile::new( TileType::City( 1, String::from( "Patusy alkoholowe 1" ) ) ),
-          Tile::new( TileType::City( 1, String::from( "Patusy alkoholowe 2" ) ) ),
-          Tile::new( TileType::City( 2, String::from( "Domki z zamurowanymi oknami 1" ) ) ),
+          Tile::new( TileType::City( 1, "#d84e9c".to_owned(), "Patusy alkoholowe 1".to_owned() ) ),
+          Tile::new( TileType::City( 1, "#d84e9c".to_owned(), "Patusy alkoholowe 2".to_owned() ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Domki z zamurowanymi oknami 1".to_owned() ) ),
 
           // Second edge
           Tile::new( TileType::Jail ),
 
-          Tile::new( TileType::City( 2, String::from( "Domki z zamurowanymi oknami 2" ) ) ),
-          Tile::new( TileType::City( 3, String::from( "Czarna dzielnia 1" ) ) ),
-          Tile::new( TileType::City( 3, String::from( "Czarna dzielnia 2" ) ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Domki z zamurowanymi oknami 2".to_owned() ) ),
+          Tile::new( TileType::City( 3, "#fc3e3f".to_owned(), "Czarna dzielnia 1".to_owned() ) ),
+          Tile::new( TileType::City( 3, "#fc3e3f".to_owned(), "Czarna dzielnia 2".to_owned() ) ),
 
           // Third edge
           Tile::new( TileType::Parking ),
 
-          Tile::new( TileType::City( 4, String::from( "Kuweta 1" ) ) ),
-          Tile::new( TileType::City( 3, String::from( "Czarna dzielnia 3" ) ) ),
-          Tile::new( TileType::City( 4, String::from( "Kuweta 2" ) ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Kuweta 1".to_owned() ) ),
+          Tile::new( TileType::City( 3, "#fc3e3f".to_owned(), "Czarna dzielnia 3".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Kuweta 2".to_owned() ) ),
 
           // Fourth edge
           Tile::new( TileType::GoToJail ),
 
-          Tile::new( TileType::City( 5, String::from( "Pola jagodowe 1" ) ) ),
-          Tile::new( TileType::City( 5, String::from( "Pola jagodowe 2" ) ) ),
-          Tile::new( TileType::City( 5, String::from( "Pola jagodowe 3" ) ) ),
+          Tile::new( TileType::City( 5, "#0171ae".to_owned(), "Pola jagodowe 1".to_owned() ) ),
+          Tile::new( TileType::City( 5, "#0171ae".to_owned(), "Pola jagodowe 2".to_owned() ) ),
+          Tile::new( TileType::City( 5, "#0171ae".to_owned(), "Pola jagodowe 3".to_owned() ) ),
         ];
 
         if tiles.len() != 16 {
@@ -90,7 +90,7 @@ enum TileType {
   Jail,
   Parking,
   GoToJail,
-  City( i8, String ),
+  City( i8, String, String ),
 }
 
 #[derive( Serialize )]

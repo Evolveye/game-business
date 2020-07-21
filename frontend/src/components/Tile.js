@@ -1,5 +1,8 @@
 import React from "react"
-import { Html, Text, Box } from "drei"
+import { Text, Box } from "drei"
+import * as THREE from "three"
+import imgTile from "./test.png"
+import imgSand from "./sand.png"
 
 class Tile extends React.Component {
   // This reference will give us direct access to the mesh
@@ -35,41 +38,14 @@ class Tile extends React.Component {
 
     this.setState( { color:this.getRandomColor() } )
   }
-
-  render() {
-    const { position, sizes, isCorner } = this.props
-    const size = sizes || (isCorner ? [ 2, .5, 2 ] : [1, .5, 2])
-    const { rotate, color } = this.state
-
-    return <mesh
-      // scale={[ scale, scale, scale ]}
-      rotation={[ 0, isCorner ? 0 : Math.PI / 180 * rotate, 0 ]}
-      ref={this.mesh}
-      position={position}
-      onClick={this.onclick}
-    >
-      <Text
-        scale={[ 1, -1, 1 ]}
-        rotation={[ Math.PI / 180 * 90, 0, isCorner ? Math.PI / 180 * (rotate * 90 + 45) : 0 ]}
-        fontSize={0.5}
-        position={[ 0, 0.3, 0 ]}
-        color="black"
-      >
-        Text
-      </Text>
-      <boxBufferGeometry attach="geometry" args={size} />
-      <meshStandardMaterial
-        attach="material"
-        color={color || this.getRandomColor()}
-      />
-    </mesh>
-  }
 }
 
 export class TileToBuy extends Tile {
   render() {
     const { position, isCorner } = this.props
     const { rotate, color } = this.state
+    const loader = new THREE.TextureLoader()
+    const texTile = loader.load( imgTile )
     const textAttrs = {
       scale: [ 1, -1, 1 ],
       rotation: [ Math.PI / 180 * 90, 0, isCorner ? Math.PI / 180 * (rotate * 90 + 45) : 0 ],
@@ -84,10 +60,10 @@ export class TileToBuy extends Tile {
       <Text {...textAttrs} position={[ 0, 0.06, -0.5 ]}>Miasto</Text>
       <Text {...textAttrs} position={[ 0, 0.06, 0.8 ]}>Cena $</Text>
       <Box args={[ 1, .1, 1.6 ]} position={[ 0, 0, 0.2 ]}>
-        <meshStandardMaterial attach="material" color={0xeeeeee} />
+        <meshMatcapMaterial attach="material" map={texTile} color={0xeeeeee} />
       </Box>
-      <Box args={[ 1, .1, 0.3 ]} position={[ 0, 0, -0.8 ]}>
-        <meshStandardMaterial attach="material" color={color} />
+      <Box args={[ 1, .1, 0.4 ]} position={[ 0, 0, -0.8 ]}>
+        <meshBasicMaterial attach="material" color={color} />
       </Box>
     </group>
   }
@@ -97,6 +73,8 @@ export class CornerTile extends Tile {
   render() {
     const { position, isCorner } = this.props
     const { rotate } = this.state
+    const loader = new THREE.TextureLoader()
+    const texSand = loader.load( imgSand )
     const textAttrs = {
       scale: [ 1, -1, 1 ],
       rotation: [ Math.PI / 180 * 90, 0, isCorner ? Math.PI / 180 * (rotate * 90 + 45) : 0 ],
@@ -108,9 +86,9 @@ export class CornerTile extends Tile {
       rotation={[ 0, isCorner ? 0 : Math.PI / 180 * rotate, 0 ]}
       position={position}
     >
-      <Text {...textAttrs} position={[ 0, 0.06, 0 ]}>Text</Text>
+      <Text {...textAttrs} position={[ 0, 0.06, 0 ]}>Pustynia</Text>
       <Box args={[ 2, .1, 2 ]}>
-        <meshStandardMaterial attach="material" color={0x333333} />
+        <meshStandardMaterial attach="material" map={texSand} />
       </Box>
     </group>
   }
