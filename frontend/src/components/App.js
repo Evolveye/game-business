@@ -151,7 +151,12 @@ export default class App extends React.Component {
         <pointLight position={[ 6, 2, 6 ]} />
         {boxes}
         {/* <Box args={[ 7.5, 0.1, 7.5 ]} position={[ 0, -0.1, 0 ]}> */}
-        <Box args={[ 20, 0.1, 20 ]} position={[ 0, -0.05, 0 ]}>
+        <Box
+          args={[ 20, 0.1, 20 ]}
+          position={[ 0, -0.05, 0 ]}
+          onPointerOver={e => e.stopPropagation()}
+          onPointerOut={e => e.stopPropagation()}
+        >
           <lineBasicMaterial attach="material" color={0x202020} />
         </Box>
       </Canvas>
