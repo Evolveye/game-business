@@ -73,6 +73,59 @@ impl Board {
 
         Board { board_type, tiles }
       },
+      BoardType::Square( 9 ) => {
+        let tiles = vec![
+          // First edge
+          Tile::new( TileType::Start ),
+
+          Tile::new( TileType::City( 1, "#d84e9c".to_owned(), "Granada".to_owned() ) ),
+          Tile::new( TileType::City( 1, "#d84e9c".to_owned(), "Seville".to_owned() ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Madrid".to_owned() ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Haldives".to_owned() ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Kongo".to_owned() ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Beijlino".to_owned() ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Shanghai".to_owned() ) ),
+
+          // Second edge
+          Tile::new( TileType::Jail ),
+
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Venice".to_owned() ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Milan".to_owned() ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Rome".to_owned() ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Gniewino".to_owned() ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Hamburg".to_owned() ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Cyprus".to_owned() ) ),
+          Tile::new( TileType::City( 2, "#fb9942".to_owned(), "Berlin".to_owned() ) ),
+
+          // Third edge
+          Tile::new( TileType::Parking ),
+
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "London".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Sochi".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Sydney".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Poznań".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Chickago".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Vegas".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "New York".to_owned() ) ),
+
+          // Fourth edge
+          Tile::new( TileType::GoToJail ),
+
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Adobe".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Lyon".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Paris".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Śląsk".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Kazan".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Cegielnia".to_owned() ) ),
+          Tile::new( TileType::City( 4, "#f7f844".to_owned(), "Mobyn".to_owned() ) ),
+        ];
+
+        if tiles.len() != 32 {
+          panic!( "BoardType with size 9 should had 32 tiles!" );
+        }
+
+        Board { board_type, tiles }
+      },
       BoardType::Square( size ) => {
         Board {
           board_type: BoardType::Square( size ),

@@ -1,10 +1,10 @@
 import React from "react"
 import { Canvas, useThree } from "react-three-fiber"
-import { OrbitControls, Box } from "drei"
+import { OrbitControls, Box, Stars } from "drei"
 
-import { TileToBuy, CornerTile } from "./Tile.js"
+import { CityTile, CornerTile } from "./Tile.js"
 import WS from "../utils/WS.js"
-import Color from "../utils/colors.js"
+// import Color from "../utils/colors.js"
 
 import "./App.css"
 
@@ -39,7 +39,7 @@ export default class App extends React.Component {
       }
     } )
 
-    this.ws.emit( `searchGame`, { square:5 } )
+    this.ws.emit( `searchGame`, { square:9 } )
   }
 
   loadSquareMap( tiles, size ) {
@@ -69,8 +69,7 @@ export default class App extends React.Component {
     const boxes = []
     const { loadedBoard } = this.state
     const { size, tiles } = loadedBoard
-    const paintedTiles = {}
-    const positionMultiplier = 1.1
+    const positionMultiplier = 1.0
 
     let lastCorner = 0
     for (let i = 0, x = 1, z = 1; i < (size ** 2 - (size - 2) ** 2); ++i) {
@@ -83,6 +82,7 @@ export default class App extends React.Component {
         (z - (size + 1) / 2) * positionMultiplier,
       ]
 
+      // const paintedTiles = {}
       // let color = 0x33333333
       // if (id) {
       //   if (!(id in paintedTiles)) {
@@ -99,14 +99,14 @@ export default class App extends React.Component {
       //   color = paintedTiles[ id ]
       // }
 
-      if (true || i % 4 !== 0) {
+      if (true || i % (size - 1) !== 0) {
         if (x === 1) position[ 0 ] -= .5
         if (x === size) position[ 0 ] += .5
         if (z === 1) position[ 2 ] -= .5
         if (z === size) position[ 2 ] += .5
       }
 
-      if (i % 4 === 0) {
+      if (i % (size - 1) === 0) {
         isCorner = true
         lastCorner++
         rotate = lastCorner
@@ -129,7 +129,8 @@ export default class App extends React.Component {
           position={position}
         /> )
       } else {
-        boxes.push( <TileToBuy
+        boxes.push( <CityTile
+          name={name}
           isCorner={isCorner}
           key={`${x};${z}`}
           rotate={rotate}
@@ -152,13 +153,15 @@ export default class App extends React.Component {
         {boxes}
         {/* <Box args={[ 7.5, 0.1, 7.5 ]} position={[ 0, -0.1, 0 ]}> */}
         <Box
-          args={[ 20, 0.1, 20 ]}
-          position={[ 0, -0.05, 0 ]}
+          args={[ 11.01, 0.1, 11.01 ]}
+          position={[ 0, -0.06, 0 ]}
           onPointerOver={e => e.stopPropagation()}
           onPointerOut={e => e.stopPropagation()}
         >
+          {/* <lineBasicMaterial attach="material" color={0xffffff} /> */}
           <lineBasicMaterial attach="material" color={0x202020} />
         </Box>
+        <Stars />
       </Canvas>
     </>
   }
@@ -169,5 +172,5 @@ function Camera() {
 
   camera.position.set( 0, 10, 0 )
 
-  return <OrbitControls />
+  return <OrbitControls rotateSpeed={0.5} />
 }
