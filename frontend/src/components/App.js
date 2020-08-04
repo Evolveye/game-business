@@ -9,7 +9,7 @@ import WS from "../utils/WS.js"
 import "./App.css"
 
 export default class App extends React.Component {
-  ws = new WS( `ws://localhost:8080` )
+  ws = new WS( `ws://localhost` )
   cameraRef = React.createRef()
 
   state = {

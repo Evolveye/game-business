@@ -1,40 +1,90 @@
 use super::mime_types::get_mime_type;
 use std::fs;
-use hyper::{ Method, StatusCode, Body, Request, Response };
+
+use tokio::io::{ AsyncReadExt, AsyncWriteExt };
+use futures::prelude::*;
+use futures::stream::StreamExt;
+use hyper::{
+  header::{ self, AsHeaderName, HeaderMap, HeaderValue },
+  upgrade::OnUpgrade,
+  Method, StatusCode, Body, Request, Response
+};
+use std::io;
+use tokio_tungstenite::{
+  tungstenite::protocol::{ Message, Role },
+  accept_async,
+  WebSocketStream
+};
+use sha1::{ Digest, Sha1 };
 
 pub const FRONTEND_BUILD_PATH: &str = "../frontend/build/";
 
 pub async fn service( req:Request<Body> ) -> Result<Response<Body>, hyper::Error> {
+  let mut response = Response::new( Body::empty() );
   let uri_path = req.uri().path();
   let mime_type = get_mime_type( uri_path );
+  let headers = req.headers();
 
-  match (req.method(), uri_path) {
-    (&Method::GET, _) => {
-      let mut res = Response::builder();
-      let path;
+  if headers.contains_key( header::UPGRADE ) {
+    match header_value( headers, header::UPGRADE ).as_str() {
+      "websocket" => {
+        let accept = {
+          let mut hasher = Sha1::new();
+          let key = req.headers().get( header::SEC_WEBSOCKET_KEY ).unwrap();
 
-      if mime_type == "" {
-        path = format!( "{}/index.html", FRONTEND_BUILD_PATH );
-        res = res.header( "Content-Type", "text/html" );
-      } else {
-        path = format!( "{}{}", FRONTEND_BUILD_PATH, uri_path );
-        res = res.header( "Content-Type", mime_type );
+          hasher.update( String::from( key.to_str().unwrap() ) );
+          hasher.update( "258EAFA5-E914-47DA-95CA-C5AB0DC85B11" );
+
+          base64::encode( hasher.finalize() )
+        };
+
+        *response.status_mut() = StatusCode::SWITCHING_PROTOCOLS;
+        response.headers_mut().insert( header::UPGRADE, "websocket".parse().unwrap() );
+        response.headers_mut().insert( header::CONNECTION, "upgrade".parse().unwrap() );
+        response.headers_mut().insert( header::SEC_WEBSOCKET_ACCEPT, accept.parse().unwrap() );
+
+        Ok( response )
       }
+      _ => {
+        println!( "NOT_IMPLEMENTED" );
 
-      println!( "uri: {: <50} mime: {: <20} path: {:?}", uri_path, mime_type, path );
+        *response.status_mut() = StatusCode::NOT_IMPLEMENTED;
+        *response.body_mut() = Body::from( "Server doesn not support that upgrade type" );
 
-      let file = fs::read( path ).unwrap();
-      let res = res.body( Body::from( file ) ).unwrap();
+        Ok( response )
+      }
+    }
+  } else {
+    match (req.method(), uri_path) {
+      (&Method::GET, _) => {
+        let path = if mime_type == "" {
+          response.headers_mut().insert( header::CONTENT_TYPE, "text/html".parse().unwrap() );
+          format!( "{}/index.html", FRONTEND_BUILD_PATH )
+        } else {
+          response.headers_mut().insert( header::CONTENT_TYPE, "text/html".parse().unwrap() );
+          format!( "{}{}", FRONTEND_BUILD_PATH, mime_type )
+        };
 
-      Ok( res )
-    },
+        println!( "uri: {: <50} mime: {: <20} path: {:?}", uri_path, mime_type, path );
 
-    _ => {
-      let mut response = Response::default();
+        let file = fs::read( path ).unwrap();
 
-      *response.status_mut() = StatusCode::NOT_FOUND;
+        *response.body_mut() = Body::from( file );
 
-      Ok( response )
+        Ok( response )
+      },
+
+      _ => {
+        *response.status_mut() = StatusCode::NOT_FOUND;
+
+        Ok( response )
+      }
     }
   }
+}
+fn header_value<T:AsHeaderName>( headers:&HeaderMap<HeaderValue>, name:T ) -> String {
+  headers.get( name )
+    .and_then( |v| v.to_str().ok() )
+    .map( |v| v.to_lowercase() )
+    .unwrap_or( String::new() )
 }
