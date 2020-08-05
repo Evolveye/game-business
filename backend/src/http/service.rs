@@ -1,18 +1,13 @@
 use super::mime_types::get_mime_type;
 use std::fs;
-
-use tokio::io::{ AsyncReadExt, AsyncWriteExt };
 use futures::prelude::*;
-use futures::stream::StreamExt;
 use hyper::{
   header::{ self, AsHeaderName, HeaderMap, HeaderValue },
-  upgrade::OnUpgrade,
+  // upgrade::OnUpgrade,
   Method, StatusCode, Body, Request, Response
 };
-use std::io;
 use tokio_tungstenite::{
   tungstenite::protocol::{ Message, Role },
-  accept_async,
   WebSocketStream
 };
 use sha1::{ Digest, Sha1 };
@@ -42,6 +37,26 @@ pub async fn service( req:Request<Body> ) -> Result<Response<Body>, hyper::Error
         response.headers_mut().insert( header::UPGRADE, "websocket".parse().unwrap() );
         response.headers_mut().insert( header::CONNECTION, "upgrade".parse().unwrap() );
         response.headers_mut().insert( header::SEC_WEBSOCKET_ACCEPT, accept.parse().unwrap() );
+
+        tokio::spawn( async {
+          let _ = req.into_body()
+            .on_upgrade()
+            .map_err( |_| eprintln!( "WebSocket upgrading error" ) )
+            .and_then( |upgraded| async {
+              let ws_stream = WebSocketStream::from_raw_socket( upgraded, Role::Server, None );
+              let ws = ws_stream.await;
+              let (mut sink, mut stream) = ws.split();
+              let msg = stream.next().await.unwrap();
+
+              if let Ok( msg ) = msg {
+                println!( "{}", msg );
+              }
+
+              let _ = sink.send( "test".into() ).await;
+
+              Ok(())
+            } ).await;
+        } );
 
         Ok( response )
       }
