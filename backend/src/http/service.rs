@@ -39,23 +39,18 @@ pub async fn service( req:Request<Body> ) -> Result<Response<Body>, hyper::Error
         response.headers_mut().insert( header::SEC_WEBSOCKET_ACCEPT, accept.parse().unwrap() );
 
         tokio::spawn( async {
-          let _ = req.into_body()
-            .on_upgrade()
-            .map_err( |_| eprintln!( "WebSocket upgrading error" ) )
-            .and_then( |upgraded| async {
-              let ws_stream = WebSocketStream::from_raw_socket( upgraded, Role::Server, None );
-              let ws = ws_stream.await;
-              let (mut sink, mut stream) = ws.split();
-              let msg = stream.next().await.unwrap();
+          let upgraded = req.into_body()
+            .on_upgrade().await
+            .unwrap();
+          let ws_stream = WebSocketStream::from_raw_socket( upgraded, Role::Server, None );
+          let ws = ws_stream.await;
+          let (mut _sink, mut stream) = ws.split();
 
-              if let Ok( msg ) = msg {
-                println!( "{}", msg );
-              }
+          loop {
+            let msg = stream.next().await.unwrap();
 
-              let _ = sink.send( "test".into() ).await;
-
-              Ok(())
-            } ).await;
+            println!( " > ws msg: {}", msg.unwrap() )
+          }
         } );
 
         Ok( response )
