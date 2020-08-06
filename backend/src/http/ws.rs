@@ -1,4 +1,5 @@
 use std::sync::{ Arc, Weak };
+use std::time::{ SystemTime, UNIX_EPOCH };
 use futures::lock::Mutex;
 use hyper::{ upgrade::Upgraded, Body, Request };
 pub use serde_json::{ Value, json };
@@ -33,12 +34,11 @@ impl WebSocketController {
       let ws_stream = WebSocketStream::from_raw_socket( upgraded, Role::Server, None );
       let ws_stream = ws_stream.await;
       let socket_mutex = Arc::new( Mutex::new( Socket::new( ws_stream ) ) );
-      let mut storage_guard = storage_mutex.lock().await;
 
       // let rooms = &storage_guard.rooms;
       let mut socket = socket_mutex.lock().await;
 
-      storage_guard.sockets.push( Arc::clone( &socket_mutex ) );
+      storage_mutex.lock().await.sockets.push( Arc::clone( &socket_mutex ) );
       socket.on_connection();
 
       loop {
@@ -55,7 +55,7 @@ impl WebSocketController {
 
             drop( socket );
 
-            storage_guard.sockets.retain( |s| block_on( s.lock() ).id != id );
+            storage_mutex.lock().await.sockets.retain( |s| block_on( s.lock() ).id != id );
 
             break
           },
@@ -97,7 +97,7 @@ impl PartialEq for Socket {
 }
 
 pub struct Socket {
-  id: usize,
+  id: u128,
   sink: SplitSink<WebSocketStream<Upgraded>, Message>,
   stream: SplitStream<WebSocketStream<Upgraded>>,
   // server: SplitStream<WebSocketStream<Upgraded>>,
@@ -105,15 +105,16 @@ pub struct Socket {
 impl Socket {
   pub fn new( ws_stream:WebSocketStream<Upgraded> ) -> Socket {
     let (sink, stream) = ws_stream.split();
+    let id = SystemTime::now().duration_since( UNIX_EPOCH ).unwrap().as_millis();
 
-    Socket { id:1, sink, stream }
+    Socket { id, sink, stream }
   }
 
   pub async fn wait_for_message( &mut self ) -> Message {
     self.stream.next().await.unwrap().unwrap()
   }
 
-  pub fn get_id( &self ) -> usize {
+  pub fn get_id( &self ) -> u128 {
     self.id
   }
   pub fn send( &mut self, message:String ) {
