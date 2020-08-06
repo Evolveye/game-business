@@ -3,7 +3,8 @@ mod ws_server;
 mod events;
 mod game;
 
-// use game::{ Game };
+use http::Server;
+use game::{ Game };
 // use ws_server::{ Server };
 use serde::ser::{ Serialize, Serializer, SerializeSeq };
 
@@ -11,7 +12,11 @@ use serde::ser::{ Serialize, Serializer, SerializeSeq };
 async fn main() {
   println!( "\n" );
 
-  http::run( ([127, 0, 0, 1], 80).into(), Some( ([91, 231, 24, 247], 80).into() ) ).await
+  let server = Server::new();
+  let game = Game::new();
+
+  server.add_ws_room( events::GameRoom::new( game ) );
+  server.run( ([127, 0, 0, 1], 80).into(), Some( ([91, 231, 24, 247], 80).into() ) ).await
 }
 
 fn vec_serialize<T,S>( vec:&Vec<T>, serializer:S ) -> Result<S::Ok, S::Error>

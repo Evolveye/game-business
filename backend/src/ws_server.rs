@@ -61,7 +61,3 @@
 //     Ok(())
 //   }
 // }
-
-// pub trait Room {
-//   fn events_handler( &mut self, data:String ) -> Value;
-// }

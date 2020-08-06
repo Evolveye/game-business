@@ -1,36 +1,31 @@
-// use std::net::SocketAddr;
-// use std::rc::Rc;
 use std::sync::Arc;
-use std::cell::RefCell;
 use futures::lock::Mutex;
-
-// pub use serde_json::{ Value, json };
-use futures::prelude::*;
-use futures::stream::{ SplitSink, SplitStream };
+use hyper::{ upgrade::Upgraded, Body, Request };
+pub use serde_json::{ Value, json };
+use futures::{
+  stream::{ SplitSink, SplitStream },
+  executor::block_on,
+  prelude::*,
+};
 use tokio_tungstenite::{
   tungstenite::protocol::{ Message, Role },
   WebSocketStream
 };
 
-use hyper::{ upgrade::Upgraded, Body, Request };
-
-// pub struct Storage {
-//   sockets: Rc<RefCell<ServerStorage>>,
-// }
-
 pub struct WebSocketController {
-  sockets: Arc<Mutex<Vec<Arc<Mutex<Socket>>>>>,
+  storage: Arc<Mutex<Storage>>,
+
 }
 impl WebSocketController {
   pub fn new() -> WebSocketController {
     WebSocketController {
       // sockets: Vec::new(),
-      sockets: Arc::new( Mutex::new( Vec::new() ) ),
+      storage: Arc::new( Mutex::new( Storage::new() ) ),
     }
   }
 
   pub fn handle_socket_from_request( &self, request:Request<Body> ) {
-    let sockets_mutex = Arc::clone( &self.sockets );
+    let storage_mutex = Arc::clone( &self.storage );
 
     tokio::spawn( async move {
       let upgraded = request.into_body()
@@ -40,7 +35,7 @@ impl WebSocketController {
       let ws_stream = ws_stream.await;
       let socket_mutex = Arc::new( Mutex::new( Socket::new( ws_stream ) ) );
 
-      sockets_mutex.lock().await.push( Arc::clone( &socket_mutex ) );
+      storage_mutex.lock().await.sockets.push( Arc::clone( &socket_mutex ) );
 
       let mut socket = socket_mutex.lock().await;
 
@@ -50,6 +45,24 @@ impl WebSocketController {
         println!( " > ws msg: {}", msg )
       }
     } );
+  }
+  pub fn add_room<T:Room + Send + 'static>( &self, room:T ) {
+    let mut storage = block_on( self.storage.lock() );
+
+    storage.rooms.push( Arc::new( Mutex::new( room ) ) );
+  }
+}
+
+struct Storage {
+  sockets: Vec<Arc<Mutex<Socket>>>,
+  rooms: Vec<Arc<Mutex<dyn Room + Send>>>,
+}
+impl Storage {
+  pub fn new() -> Storage {
+    Storage {
+      sockets: Vec::new(),
+      rooms: Vec::new(),
+    }
   }
 }
 
@@ -72,10 +85,10 @@ impl Socket {
   }
 }
 
-// struct ServerStorage {
-//   rooms: Vec<Rc<RefCell<dyn Room>>>,
-// }
-
+// #[derive(Send)]
+pub trait Room {
+  fn events_handler( &mut self, data:String ) -> Value;
+}
 // impl Server {
 //   pub fn new() -> Server {
 //     Server {
@@ -83,9 +96,6 @@ impl Socket {
 //     }
 //   }
 
-//   pub fn add_room<T:Room + 'static>( &self, room:T ) {
-//     self.storage.borrow_mut().rooms.push( Rc::new( RefCell::new( room ) ) )
-//   }
 
 //   pub async fn run( &self, addr:SocketAddr ) {
 //     println!( "WS server ready on ws://{}", addr );
