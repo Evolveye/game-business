@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{ Arc, Weak };
 use futures::lock::Mutex;
 use hyper::{ upgrade::Upgraded, Body, Request };
 pub use serde_json::{ Value, json };
@@ -14,7 +14,6 @@ use tokio_tungstenite::{
 
 pub struct WebSocketController {
   storage: Arc<Mutex<Storage>>,
-
 }
 impl WebSocketController {
   pub fn new() -> WebSocketController {
@@ -34,15 +33,41 @@ impl WebSocketController {
       let ws_stream = WebSocketStream::from_raw_socket( upgraded, Role::Server, None );
       let ws_stream = ws_stream.await;
       let socket_mutex = Arc::new( Mutex::new( Socket::new( ws_stream ) ) );
+      let mut storage_guard = storage_mutex.lock().await;
 
-      storage_mutex.lock().await.sockets.push( Arc::clone( &socket_mutex ) );
-
+      // let rooms = &storage_guard.rooms;
       let mut socket = socket_mutex.lock().await;
+
+      storage_guard.sockets.push( Arc::clone( &socket_mutex ) );
+      socket.on_connection();
 
       loop {
         let msg = socket.wait_for_message().await;
 
-        println!( " > ws msg: {}", msg )
+        match msg {
+          Message::Pong(_) |
+          Message::Binary(_) |
+          Message::Ping(_) => (),
+          Message::Close(_) => {
+            let id = socket.id;
+
+            socket.on_disconnection();
+
+            drop( socket );
+
+            storage_guard.sockets.retain( |s| block_on( s.lock() ).id != id );
+
+            break
+          },
+          Message::Text( message ) => {
+            println!( " >  ws msg: {}", message );
+          }
+        }
+
+        // for room in rooms {
+        //   room.lock().await.events_handler( msg.clone().into_text().unwrap() );
+        // }
+
       }
     } );
   }
@@ -65,26 +90,44 @@ impl Storage {
     }
   }
 }
+impl PartialEq for Socket {
+  fn eq( &self, other:&Socket ) -> bool {
+    self.id == other.id
+  }
+}
 
 pub struct Socket {
+  id: usize,
   sink: SplitSink<WebSocketStream<Upgraded>, Message>,
   stream: SplitStream<WebSocketStream<Upgraded>>,
+  // server: SplitStream<WebSocketStream<Upgraded>>,
 }
 impl Socket {
   pub fn new( ws_stream:WebSocketStream<Upgraded> ) -> Socket {
     let (sink, stream) = ws_stream.split();
 
-    Socket { sink, stream }
+    Socket { id:1, sink, stream }
   }
 
   pub async fn wait_for_message( &mut self ) -> Message {
     self.stream.next().await.unwrap().unwrap()
   }
+
+  pub fn get_id( &self ) -> usize {
+    self.id
+  }
   pub fn send( &mut self, message:String ) {
     self.sink.send( message.into() );
   }
+  pub fn broadcast( &mut self, message:String ) {
+    todo!();
+  }
 }
-
+pub trait Handler {
+  fn on_connection( &self ) {}
+  fn on_disconnection( &self ) {}
+  fn on_receive_data( &self, event:String, data:Value );
+}
 // #[derive(Send)]
 pub trait Room {
   fn events_handler( &mut self, data:String ) -> Value;

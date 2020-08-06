@@ -8,7 +8,7 @@ use hyper::Server as HyperServer;
 use hyper::service::{ make_service_fn, service_fn };
 use ws::WebSocketController;
 
-pub use ws::{ Room, Value, json };
+pub use ws::{ Socket, Handler, Room, Value, json };
 
 pub struct Server {
   websocket_controller_arc: Arc<WebSocketController>,

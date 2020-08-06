@@ -1,7 +1,16 @@
 
-use crate::http::{ Room, Value, json };
+use crate::http::{ Handler, Socket, Room, Value, json };
 use crate::game::{ Game, GameEvent };
 
+impl Handler for Socket {
+  fn on_connection( &self ) {
+    println!( " [i]  {} connected", self.get_id() );
+  }
+  fn on_disconnection( &self ) {
+    println!( " [i]  {} disconnected", self.get_id() );
+  }
+  fn on_receive_data( &self, event:String, data:Value ) {}
+}
 pub struct GameRoom {
   game: Game,
 }
