@@ -1,4 +1,4 @@
-use std::sync::{ Arc, Weak };
+use std::sync::Arc;
 use std::time::{ SystemTime, UNIX_EPOCH };
 use futures::lock::Mutex;
 use hyper::{ upgrade::Upgraded, Body, Request };
@@ -13,14 +13,13 @@ use tokio_tungstenite::{
   WebSocketStream
 };
 
-pub struct WebSocketController {
-  storage: Arc<Mutex<Storage>>,
+pub struct WebSocketController<T> {
+  storage: Arc<Mutex<Storage<T>>>,
 }
-impl WebSocketController {
-  pub fn new() -> WebSocketController {
+impl<T> WebSocketController<T> {
+  pub fn new( socket_external_data:T ) -> WebSocketController<T> {
     WebSocketController {
-      // sockets: Vec::new(),
-      storage: Arc::new( Mutex::new( Storage::new() ) ),
+      storage: Arc::new( Mutex::new( Storage::new( socket_external_data ) ) ),
     }
   }
 
@@ -28,17 +27,18 @@ impl WebSocketController {
     let storage_mutex = Arc::clone( &self.storage );
 
     tokio::spawn( async move {
+      let storage_guard = storage_mutex.lock().await;
       let upgraded = request.into_body()
         .on_upgrade().await
         .unwrap();
       let ws_stream = WebSocketStream::from_raw_socket( upgraded, Role::Server, None );
       let ws_stream = ws_stream.await;
-      let socket_mutex = Arc::new( Mutex::new( Socket::new( ws_stream ) ) );
+      let socket_mutex = Arc::new( Mutex::new( Socket::new( storage_guard.sockets_external_data, ws_stream ) ) );
 
       // let rooms = &storage_guard.rooms;
       let mut socket = socket_mutex.lock().await;
 
-      storage_mutex.lock().await.sockets.push( Arc::clone( &socket_mutex ) );
+      storage_guard.sockets.push( Arc::clone( &socket_mutex ) );
       socket.on_connection();
 
       loop {
@@ -59,9 +59,7 @@ impl WebSocketController {
 
             break
           },
-          Message::Text( message ) => {
-            println!( " >  ws msg: {}", message );
-          }
+          Message::Text( message ) => socket.on_receive_data( message ),
         }
 
         // for room in rooms {
@@ -71,43 +69,46 @@ impl WebSocketController {
       }
     } );
   }
-  pub fn add_room<T:Room + Send + 'static>( &self, room:T ) {
+  pub fn add_room<U:Room + Send + 'static>( &self, room:U ) {
     let mut storage = block_on( self.storage.lock() );
 
     storage.rooms.push( Arc::new( Mutex::new( room ) ) );
   }
 }
 
-struct Storage {
-  sockets: Vec<Arc<Mutex<Socket>>>,
+struct Storage<T> {
+  sockets: Vec<Arc<Mutex<Socket<T>>>>,
   rooms: Vec<Arc<Mutex<dyn Room + Send>>>,
+  sockets_external_data: T,
 }
-impl Storage {
-  pub fn new() -> Storage {
+impl<T> Storage<T> {
+  pub fn new( sockets_external_data:T ) -> Storage<T> {
     Storage {
       sockets: Vec::new(),
       rooms: Vec::new(),
+      sockets_external_data,
     }
   }
 }
-impl PartialEq for Socket {
-  fn eq( &self, other:&Socket ) -> bool {
+impl<T> PartialEq for Socket<T> {
+  fn eq( &self, other:&Socket<T> ) -> bool {
     self.id == other.id
   }
 }
 
-pub struct Socket {
+pub struct Socket<T> {
   id: u128,
+  external_data: T,
   sink: SplitSink<WebSocketStream<Upgraded>, Message>,
   stream: SplitStream<WebSocketStream<Upgraded>>,
   // server: SplitStream<WebSocketStream<Upgraded>>,
 }
-impl Socket {
-  pub fn new( ws_stream:WebSocketStream<Upgraded> ) -> Socket {
+impl<T> Socket<T> {
+  pub fn new( external_data:T, ws_stream:WebSocketStream<Upgraded> ) -> Socket<T> {
     let (sink, stream) = ws_stream.split();
     let id = SystemTime::now().duration_since( UNIX_EPOCH ).unwrap().as_millis();
 
-    Socket { id, sink, stream }
+    Socket { id, external_data, sink, stream }
   }
 
   pub async fn wait_for_message( &mut self ) -> Message {
@@ -127,7 +128,7 @@ impl Socket {
 pub trait Handler {
   fn on_connection( &self ) {}
   fn on_disconnection( &self ) {}
-  fn on_receive_data( &self, event:String, data:Value );
+  fn on_receive_data( &self, data:String );
 }
 // #[derive(Send)]
 pub trait Room {

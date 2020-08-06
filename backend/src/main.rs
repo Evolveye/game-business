@@ -8,14 +8,22 @@ use game::Game;
 use std::sync::Arc;
 use serde::ser::{ Serialize, Serializer, SerializeSeq };
 
+struct SocketData {
+  game: Game,
+}
+
 #[tokio::main]
 async fn main() {
   println!( "\n" );
 
-  let server = Server::new();
-  let game = Game::new();
+  let ws_handler =
 
-  server.add_ws_room( events::GameRoom::new( game ) );
+  let sockets_data = SocketData {
+    game: Game::new(),
+  };
+  let server = Server::new( sockets_data );
+
+  server.add_ws_room( events::GameRoom::new( sockets_data.game ) );
   server.run( ([127, 0, 0, 1], 80).into(), Some( ([91, 231, 24, 247], 80).into() ) ).await
 }
 

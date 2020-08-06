@@ -14,9 +14,9 @@ pub struct Server {
   websocket_controller_arc: Arc<WebSocketController>,
 }
 impl Server {
-  pub fn new() -> Server {
+  pub fn new<T>( socket_external_data:T ) -> Server {
     Server {
-      websocket_controller_arc: Arc::new( WebSocketController::new() ),
+      websocket_controller_arc: Arc::new( WebSocketController::new( socket_external_data ) ),
     }
   }
 
