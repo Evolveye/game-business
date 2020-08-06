@@ -147,8 +147,8 @@ export default class App extends React.Component {
 
     return <>
       <Canvas className="game_canvas">
-        <ambientLight />
         <Camera />
+        <ambientLight />
         <pointLight position={[ 6, 2, 6 ]} />
         {boxes}
         {/* <Box args={[ 7.5, 0.1, 7.5 ]} position={[ 0, -0.1, 0 ]}> */}

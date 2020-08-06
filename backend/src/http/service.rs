@@ -1,20 +1,18 @@
 use super::mime_types::get_mime_type;
+use sha1::{ Digest, Sha1 };
+use std::sync::Arc;
 use std::fs;
-use futures::prelude::*;
 use hyper::{
   header::{ self, AsHeaderName, HeaderMap, HeaderValue },
   // upgrade::OnUpgrade,
   Method, StatusCode, Body, Request, Response
 };
-use tokio_tungstenite::{
-  tungstenite::protocol::{ Message, Role },
-  WebSocketStream
-};
-use sha1::{ Digest, Sha1 };
+
+use super::ws::WebSocketController;
 
 pub const FRONTEND_BUILD_PATH: &str = "../frontend/build/";
 
-pub async fn service( req:Request<Body> ) -> Result<Response<Body>, hyper::Error> {
+pub async fn service<'a>( req:Request<Body>, websocket_controller:Arc<WebSocketController> ) -> Result<Response<Body>, hyper::Error> {
   let mut response = Response::new( Body::empty() );
   let uri_path = req.uri().path();
   let mime_type = get_mime_type( uri_path );
@@ -38,20 +36,7 @@ pub async fn service( req:Request<Body> ) -> Result<Response<Body>, hyper::Error
         response.headers_mut().insert( header::CONNECTION, "upgrade".parse().unwrap() );
         response.headers_mut().insert( header::SEC_WEBSOCKET_ACCEPT, accept.parse().unwrap() );
 
-        tokio::spawn( async {
-          let upgraded = req.into_body()
-            .on_upgrade().await
-            .unwrap();
-          let ws_stream = WebSocketStream::from_raw_socket( upgraded, Role::Server, None );
-          let ws = ws_stream.await;
-          let (mut _sink, mut stream) = ws.split();
-
-          loop {
-            let msg = stream.next().await.unwrap();
-
-            println!( " > ws msg: {}", msg.unwrap() )
-          }
-        } );
+        websocket_controller.handle_socket_from_request( req );
 
         Ok( response )
       }
