@@ -1,29 +1,16 @@
-mod http;
-mod ws_server;
-mod events;
+mod cactu_server;
 mod game;
 
-use http::Server;
-use game::Game;
-use std::sync::Arc;
+use cactu_server::{ Socket, Server};
 use serde::ser::{ Serialize, Serializer, SerializeSeq };
-
-struct SocketData {
-  game: Game,
-}
 
 #[tokio::main]
 async fn main() {
   println!( "\n" );
 
-  let ws_handler =
+  let server = Server::new();
 
-  let sockets_data = SocketData {
-    game: Game::new(),
-  };
-  let server = Server::new( sockets_data );
-
-  server.add_ws_room( events::GameRoom::new( sockets_data.game ) );
+  // server.add_ws_room( events::GameRoom::new( sockets_data.game ) );
   server.run( ([127, 0, 0, 1], 80).into(), Some( ([91, 231, 24, 247], 80).into() ) ).await
 }
 
@@ -36,4 +23,9 @@ where S:Serializer, T:Serialize {
   }
 
   seq.end()
+}
+
+fn socket_configurer( socket:Socket ) {
+  // socket.on_connection( || println!( " [i] {}::connected", socket.get_id() ) );
+  // socket.on_disconnection( || println!( " [i] {}::disconnected", socket.get_id() ) );
 }
