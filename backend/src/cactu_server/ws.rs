@@ -69,7 +69,12 @@ impl WebSocketController {
 
             break
           },
-          Message::Text( _message ) => (),
+          Message::Text( message ) => {
+            if let Some( mut on_message ) = socket.on_message_handler.take() {
+              on_message( &mut socket, message );
+              socket.on_message_handler = Some( on_message );
+            }
+          }
         }
 
         // for room in rooms {
@@ -110,7 +115,7 @@ pub struct Socket<'a> {
   id: u128,
   sink: SplitSink<WebSocketStream<Upgraded>, Message>,
   stream: SplitStream<WebSocketStream<Upgraded>>,
-  on_message_handler: Option<Box<dyn FnMut() + Send + 'a>>,
+  on_message_handler: Option<Box<dyn FnMut( &mut Self, String ) + Send + 'a>>,
   on_disconnection_handler: Option<Box<dyn FnMut( &mut Self ) + Send + 'a>>,
 }
 impl<'a> Socket<'a> {
@@ -134,16 +139,16 @@ impl<'a> Socket<'a> {
   pub fn get_id( &self ) -> u128 {
     self.id
   }
-  pub fn send( & mut self, message:String ) {
+  pub fn send( & mut self, message:&str ) {
     block_on( self.sink.send( message.into() ) );
   }
   pub fn broadcast( &mut self, message:String ) {
     todo!();
   }
-  pub fn on_message( &mut self, handler:Box<impl FnMut( String )> ) {
-    todo!();
+  pub fn on_message( &mut self, handler:impl FnMut( &mut Self, String ) + Send + 'a ) {
+    self.on_message_handler = Some( Box::new( handler ) );
   }
-  pub fn on_disconnection( & mut self, handler:impl FnMut( &mut Self ) + Send + 'a ) {
+  pub fn on_disconnection( &mut self, handler:impl FnMut( &mut Self ) + Send + 'a ) {
     self.on_disconnection_handler = Some( Box::new( handler ) );
   }
 }
