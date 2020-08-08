@@ -1,5 +1,5 @@
 use std::{
-  collections::HashMap,
+  // collections::HashMap,
   time::{ SystemTime, UNIX_EPOCH },
   sync::Arc,
 };
@@ -17,7 +17,7 @@ use tokio_tungstenite::{
 };
 
 pub struct WebSocketController {
-  storage: Arc<Mutex<Storage>>,
+  storage: Arc<Mutex<Storage<'static>>>,
 }
 impl WebSocketController {
   pub fn new() -> WebSocketController {
@@ -43,9 +43,11 @@ impl WebSocketController {
 
       storage_guard.sockets.push( Arc::clone( &socket_mutex ) );
       if let Some( mut configurer ) = storage_guard.socket_configurer.take() {
-        configurer( &socket );
+        configurer( &mut socket );
         storage_guard.socket_configurer = Some( configurer );
       }
+
+      drop( storage_guard );
 
       loop {
         let msg = socket.wait_for_message().await;
@@ -57,7 +59,9 @@ impl WebSocketController {
           Message::Close(_) => {
             let id = socket.id;
 
-            // socket.on_disconnection();
+            if let Some( mut on_disconnect ) = socket.on_disconnection_handler.take() {
+              on_disconnect( &mut socket );
+            }
 
             drop( socket );
 
@@ -65,7 +69,7 @@ impl WebSocketController {
 
             break
           },
-          Message::Text( message ) => (),
+          Message::Text( _message ) => (),
         }
 
         // for room in rooms {
@@ -75,7 +79,7 @@ impl WebSocketController {
       }
     } );
   }
-  pub fn set_ws_configurer( &self, configurer:Box<dyn FnMut( &MutexGuard<Socket> ) + Send + 'static> ) {
+  pub fn set_ws_configurer( &self, configurer:Box<dyn FnMut( &mut MutexGuard<Socket> ) + Send + 'static> ) {
     let mut storage = block_on( self.storage.lock() );
 
     storage.socket_configurer = Some( Box::new( configurer ) );
@@ -87,13 +91,13 @@ impl WebSocketController {
   }
 }
 
-struct Storage {
-  sockets: Vec<Arc<Mutex<Socket>>>,
+struct Storage<'a> {
+  sockets: Vec<Arc<Mutex<Socket<'a>>>>,
   rooms: Vec<Arc<Mutex<dyn Room + Send>>>,
-  socket_configurer: Option<Box<dyn FnMut( &MutexGuard<Socket> ) + Send>>,
+  socket_configurer: Option<Box<dyn FnMut( &mut MutexGuard<Socket> ) + Send>>,
 }
-impl Storage {
-  pub fn new() -> Storage {
+impl<'a> Storage<'a> {
+  pub fn new() -> Storage<'a> {
     Storage {
       sockets: Vec::new(),
       rooms: Vec::new(),
@@ -102,15 +106,15 @@ impl Storage {
   }
 }
 
-pub struct Socket {
+pub struct Socket<'a> {
   id: u128,
   sink: SplitSink<WebSocketStream<Upgraded>, Message>,
   stream: SplitStream<WebSocketStream<Upgraded>>,
-  on_message_handler: Option<Box<dyn FnMut() + Send + 'static>>,
-  on_disconnection_handler: Option<Box<dyn FnMut() + Send + 'static>>,
+  on_message_handler: Option<Box<dyn FnMut() + Send + 'a>>,
+  on_disconnection_handler: Option<Box<dyn FnMut( &mut Self ) + Send + 'a>>,
 }
-impl Socket {
-  pub fn new( ws_stream:WebSocketStream<Upgraded> ) -> Socket {
+impl<'a> Socket<'a> {
+  pub fn new( ws_stream:WebSocketStream<Upgraded> ) -> Socket<'a> {
     let (sink, stream) = ws_stream.split();
     let id = SystemTime::now().duration_since( UNIX_EPOCH ).unwrap().as_millis();
 
@@ -130,20 +134,20 @@ impl Socket {
   pub fn get_id( &self ) -> u128 {
     self.id
   }
-  pub fn send( &mut self, message:String ) {
-    self.sink.send( message.into() );
+  pub fn send( & mut self, message:String ) {
+    block_on( self.sink.send( message.into() ) );
   }
   pub fn broadcast( &mut self, message:String ) {
     todo!();
   }
-  pub fn on_message( &mut self, handler:Box<dyn FnMut( String )> ) {
+  pub fn on_message( &mut self, handler:Box<impl FnMut( String )> ) {
     todo!();
   }
-  pub fn on_disconnection( &self, handler:Box<dyn FnMut()> ) {
-    todo!();
+  pub fn on_disconnection( & mut self, handler:impl FnMut( &mut Self ) + Send + 'a ) {
+    self.on_disconnection_handler = Some( Box::new( handler ) );
   }
 }
-impl PartialEq for Socket {
+impl PartialEq for Socket<'_> {
   fn eq( &self, other:&Socket ) -> bool {
     self.id == other.id
   }

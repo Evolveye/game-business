@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::net::SocketAddr;
 use hyper::Server as HyperServer;
 use hyper::service::{ make_service_fn, service_fn };
+use futures::lock::MutexGuard;
 use ws::WebSocketController;
 
 pub use ws::{ Room, Socket, Value, json };
@@ -53,6 +54,9 @@ impl Server {
 
   pub fn add_ws_room<T:Room + Send + 'static>( &self, room:T ) {
      self.websocket_controller_arc.add_room( room );
+  }
+  pub fn set_ws_configurer<'a>( &self, configurer:impl FnMut( &mut MutexGuard<Socket> ) + Send + Sync + 'a + 'static ) {
+    self.websocket_controller_arc.set_ws_configurer( Box::new( configurer ) )
   }
 }
 
