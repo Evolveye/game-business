@@ -2,9 +2,9 @@ mod cactu_server;
 mod game;
 mod test;
 
-use futures::lock::MutexGuard;
-use cactu_server::{ Socket, Server};
+use cactu_server::{ Server};
 use serde::ser::{ Serialize, Serializer, SerializeSeq };
+use game::socket_configurer;
 
 #[tokio::main]
 async fn main() {
@@ -26,15 +26,4 @@ where S:Serializer, T:Serialize {
   }
 
   seq.end()
-}
-
-fn socket_configurer<'a>() -> impl FnMut( &mut MutexGuard<Socket> ) + Send + Sync + 'a {
-  |socket| {
-    let id = socket.get_id();
-
-    println!( " [i] {}::connected", id );
-
-    socket.send( format!( "Connected succesfully with id {}", id ) );
-    socket.on_disconnection( |s| println!( " [i] {}::disconnected", s.get_id() ) );
-  }
 }
