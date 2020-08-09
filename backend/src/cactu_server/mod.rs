@@ -103,10 +103,10 @@ impl Server {
         (&Method::GET, _) => {
           let path = if mime_type == "" {
             response.headers_mut().insert( header::CONTENT_TYPE, "text/html".parse().unwrap() );
-            format!( "{}/index.html", FRONTEND_BUILD_PATH )
+            format!( "{}index.html", FRONTEND_BUILD_PATH )
           } else {
             response.headers_mut().insert( header::CONTENT_TYPE, "text/html".parse().unwrap() );
-            format!( "{}{}", FRONTEND_BUILD_PATH, mime_type )
+            format!( "{}{}", FRONTEND_BUILD_PATH, uri_path )
           };
 
           println!( "uri: {: <50} mime: {: <20} path: {:?}", uri_path, mime_type, path );

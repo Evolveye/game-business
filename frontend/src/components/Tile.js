@@ -71,7 +71,7 @@ class Tile extends React.Component {
 
 export class CityTile extends Tile {
   render() {
-    const { position, isCorner, name } = this.props
+    const { position, isCorner, name, cost } = this.props
     const { rotate, color } = this.state
     const loader = new THREE.TextureLoader()
     // const material = new THREE.MeshF
@@ -92,13 +92,14 @@ export class CityTile extends Tile {
 
     this.materialArray[ 2 ].map = texTile
 
+    console.log( `cost`, cost )
     return <group
       {...this.events}
       rotation={[ 0, isCorner ? 0 : Math.PI / 180 * rotate, 0 ]}
       position={[...position]}
     >
       <Text {...textAttrs} position={[ 0, 0.06, -0.5 ]}>{name}</Text>
-      <Text {...textAttrs} fontSize={0.15} position={[ 0, 0.06, 0.6 ]}>999$</Text>
+      <Text {...textAttrs} fontSize={0.15} position={[ 0, 0.06, 0.6 ]}>{cost.toString()}$</Text>
       <Box material={this.materialArray} args={[ 1, .1, 1.6 ]} position={[ 0, 0, 0.2 ]} />
       <Box args={[ 1, .1, 0.4 ]} position={[ 0, 0, -0.8 ]}>
         <meshBasicMaterial attach="material" map={texFrame} color={color} />

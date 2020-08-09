@@ -54,7 +54,7 @@ export default class App extends React.Component {
         case `parking`:
         case `goToJail`: performedTiles.push( { type:name } ); break
         case `city`: performedTiles.push( {
-          type:`city`, id:values[ 0 ], color:values[ 1 ], name:values[ 2 ]
+          type:`city`, id:values[ 0 ], color:`#${values[ 1 ].toString( 16 )}`, cost:values[ 2 ], name:values[ 3 ]
         } ); break
       }
     }
@@ -73,7 +73,7 @@ export default class App extends React.Component {
 
     let lastCorner = 0
     for (let i = 0, x = 1, z = 1; i < (size ** 2 - (size - 2) ** 2); ++i) {
-      const { id, color, type, name } = tiles[ i ]
+      const { type, id, color, cost, name } = tiles[ i ]
       let rotate
       let isCorner = false
       let position = [
@@ -131,6 +131,7 @@ export default class App extends React.Component {
       } else {
         boxes.push( <CityTile
           name={name}
+          cost={cost}
           isCorner={isCorner}
           key={`${x};${z}`}
           rotate={rotate}
