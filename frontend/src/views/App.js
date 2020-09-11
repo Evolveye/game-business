@@ -2,7 +2,7 @@ import React from "react"
 import { Canvas, useThree } from "react-three-fiber"
 import { OrbitControls, Box, Stars } from "drei"
 
-import { CityTile, CornerTile } from "../components/Tile.js"
+import { CityTile, CornerTile, CenterTile } from "../components/Tile.js"
 import WS from "../components/WS.js"
 // import Color from "../utils/colors.js"
 
@@ -17,6 +17,7 @@ export default class App extends React.Component {
     active: false,
     hovered: false,
     gameBoard: {},
+    spacingBetweenTiles: 0.1,
   }
 
   performEnum( enumObj ) {
@@ -75,9 +76,9 @@ export default class App extends React.Component {
   render() {
     /** @type {Tile[]} */
     const boxes = []
-    const { loadedBoard } = this.state
+    const { loadedBoard, spacingBetweenTiles } = this.state
     const { size, tiles } = loadedBoard
-    const positionMultiplier = 1.0
+    const positionMultiplier = 1 + spacingBetweenTiles
 
     let lastCorner = 0
     for (let i = 0, x = 1, z = 1; i < (size ** 2 - (size - 2) ** 2); ++i) {
@@ -109,9 +110,9 @@ export default class App extends React.Component {
       // }
 
       if (true || i % (size - 1) !== 0) {
-        if (x === 1) position[ 0 ] -= .5
+        if (x === 1)    position[ 0 ] -= .5
         if (x === size) position[ 0 ] += .5
-        if (z === 1) position[ 2 ] -= .5
+        if (z === 1)    position[ 2 ] -= .5
         if (z === size) position[ 2 ] += .5
       }
 
@@ -161,16 +162,7 @@ export default class App extends React.Component {
         <ambientLight />
         <pointLight position={[ 6, 2, 6 ]} />
         {boxes}
-        {/* <Box args={[ 7.5, 0.1, 7.5 ]} position={[ 0, -0.1, 0 ]}> */}
-        <Box
-          args={[ 11.01, 0.1, 11.01 ]}
-          position={[ 0, -0.06, 0 ]}
-          onPointerOver={e => e.stopPropagation()}
-          onPointerOut={e => e.stopPropagation()}
-        >
-          {/* <lineBasicMaterial attach="material" color={0xffffff} /> */}
-          <lineBasicMaterial attach="material" color={0x202020} />
-        </Box>
+        <CenterTile args={[ 7, 1, 7 ]} position={[ 0, -.5, 0 ]} />
         <Stars />
       </Canvas>
     </>
@@ -182,5 +174,5 @@ function Camera() {
 
   camera.position.set( 0, 10, 0 )
 
-  return <OrbitControls rotateSpeed={0.5} />
+  return <OrbitControls rotateSpeed={1} />
 }
