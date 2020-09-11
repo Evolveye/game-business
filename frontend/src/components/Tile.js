@@ -92,7 +92,6 @@ export class CityTile extends Tile {
 
     this.materialArray[ 2 ].map = texTile
 
-    console.log( `cost`, cost )
     return <group
       {...this.events}
       rotation={[ 0, isCorner ? 0 : Math.PI / 180 * rotate, 0 ]}

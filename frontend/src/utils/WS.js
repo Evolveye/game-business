@@ -27,16 +27,18 @@ export default class RoomedWebSocked extends WebSocket {
       jsonData = data
     }
 
-    if (typeof jsonData ==`object` && `event` in jsonData && `data` in jsonData) {
+    if (typeof jsonData === `object` && `event` in jsonData && `data` in jsonData) {
       const { event, data } = jsonData
 
       if (this.#listeners.has( event )) this.#listeners.get( event )( data )
       else console.warn( `Unhandled event: ${event}` )
+    } else if (typeof jsonData === `string` && this.#listeners.has( jsonData )) {
+      this.#listeners.get( jsonData )( jsonData )
     } else this.#defaultListener( jsonData )
   }
 
   setDefaultListener( listener ) {
-    if (typeof listener != `function`) throw `Listener should be the function type`
+    if (typeof listener != `function`) throw new Error( `Listener should be the function type` )
 
     this.#defaultListener = listener
   }

@@ -105,15 +105,17 @@ impl Server {
             response.headers_mut().insert( header::CONTENT_TYPE, "text/html".parse().unwrap() );
             format!( "{}index.html", FRONTEND_BUILD_PATH )
           } else {
-            response.headers_mut().insert( header::CONTENT_TYPE, "text/html".parse().unwrap() );
-            format!( "{}{}", FRONTEND_BUILD_PATH, uri_path )
+            response.headers_mut().insert( header::CONTENT_TYPE, mime_type.parse().unwrap() );
+            format!( "{}{}", FRONTEND_BUILD_PATH, &uri_path[ 1.. ] )
           };
 
           println!( "uri: {: <50} mime: {: <20} path: {:?}", uri_path, mime_type, path );
 
-          let file = fs::read( path ).unwrap();
-
-          *response.body_mut() = Body::from( file );
+          if let Ok( file) = fs::read( path ) {
+            *response.body_mut() = Body::from( file );
+          } else {
+            *response.status_mut() = StatusCode::NOT_FOUND
+          }
 
           Ok( response )
         },
@@ -127,9 +129,9 @@ impl Server {
     }
   }
 
-  pub fn add_ws_room<T:Room + Send + 'static>( &self, room:T ) {
-     self.websocket_controller_arc.add_room( room );
-  }
+  // pub fn add_ws_room<T:Room + Send + 'static>( &self, room:T ) {
+  //    self.websocket_controller_arc.add_room( room );
+  // }
   pub fn set_ws_configurer<'a>( &self, configurer:impl FnMut( &mut MutexGuard<Socket> ) + Send + Sync + 'a + 'static ) {
     self.websocket_controller_arc.set_ws_configurer( Box::new( configurer ) )
   }
@@ -139,6 +141,5 @@ impl Server {
       .map( |v| v.to_lowercase() )
       .unwrap_or( String::new() )
   }
-
 }
 

@@ -30,16 +30,14 @@ impl WebSocketController {
     let storage_mutex = Arc::clone( &self.storage );
 
     tokio::spawn( async move {
-      let mut storage_guard = storage_mutex.lock().await;
       let upgraded = request.into_body()
         .on_upgrade().await
         .unwrap();
       let ws_stream = WebSocketStream::from_raw_socket( upgraded, Role::Server, None );
       let ws_stream = ws_stream.await;
       let socket_mutex = Arc::new( Mutex::new( Socket::new( ws_stream ) ) );
-
-      // let rooms = &storage_guard.rooms;
       let mut socket = socket_mutex.lock().await;
+      let mut storage_guard = storage_mutex.lock().await;
 
       storage_guard.sockets.push( Arc::clone( &socket_mutex ) );
       if let Some( mut configurer ) = storage_guard.socket_configurer.take() {
@@ -65,7 +63,11 @@ impl WebSocketController {
 
             drop( socket );
 
-            storage_mutex.lock().await.sockets.retain( |s| block_on( s.lock() ).id != id );
+            storage_mutex.lock().await.sockets.retain( |s| if let Some( s ) = s.try_lock() {
+              s.get_id() == id
+            } else {
+              false
+            } );
 
             break
           },
@@ -89,23 +91,23 @@ impl WebSocketController {
 
     storage.socket_configurer = Some( Box::new( configurer ) );
   }
-  pub fn add_room<U:Room + Send + 'static>( &self, room:U ) {
-    let mut storage = block_on( self.storage.lock() );
+  // pub fn add_room<U:Room + Send + 'static>( &self, room:U ) {
+  //   let mut storage = block_on( self.storage.lock() );
 
-    storage.rooms.push( Arc::new( Mutex::new( room ) ) );
-  }
+  //   storage.rooms.push( Arc::new( Mutex::new( room ) ) );
+  // }
 }
 
 struct Storage<'a> {
   sockets: Vec<Arc<Mutex<Socket<'a>>>>,
-  rooms: Vec<Arc<Mutex<dyn Room + Send>>>,
+  // rooms: Vec<Arc<Mutex<dyn Room + Send>>>,
   socket_configurer: Option<Box<dyn FnMut( &mut MutexGuard<Socket> ) + Send>>,
 }
 impl<'a> Storage<'a> {
   pub fn new() -> Storage<'a> {
     Storage {
       sockets: Vec::new(),
-      rooms: Vec::new(),
+      // rooms: Vec::new(),
       socket_configurer: None,
     }
   }
@@ -140,11 +142,13 @@ impl<'a> Socket<'a> {
     self.id
   }
   pub fn send( & mut self, message:&str ) {
-    block_on( self.sink.send( message.into() ) );
+    if let Err( err ) = block_on( self.sink.send( message.into() ) ) {
+      println!( "`{}`  -->  {}", message, err );
+    }
   }
-  pub fn broadcast( &mut self, message:String ) {
-    todo!();
-  }
+  // pub fn broadcast( &mut self, message:String ) {
+  //   todo!();
+  // }
   pub fn on_message( &mut self, handler:impl FnMut( &mut Self, String ) + Send + 'a ) {
     self.on_message_handler = Some( Box::new( handler ) );
   }

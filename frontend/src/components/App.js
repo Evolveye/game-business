@@ -9,7 +9,7 @@ import WS from "../utils/WS.js"
 import "./App.css"
 
 export default class App extends React.Component {
-  ws = new WS( `ws://localhost` )
+  ws = new WS( `ws://91.231.24.247:3000/` )
   cameraRef = React.createRef()
 
   state = {
@@ -35,11 +35,15 @@ export default class App extends React.Component {
       const { name, values } = this.performEnum( gameBoard.boardType )
 
       switch (name) {
-        case `square`: this.loadSquareMap( gameBoard.tiles, values[ 0 ] )
+        case `square`: this.loadSquareMap( gameBoard.tiles, values[ 0 ] ); break
+        default: break
       }
     } )
 
     this.ws.emit( `searchGame`, { square:9 } )
+
+    this.ws.on( `pong`, console.log )
+    setInterval( () => this.ws.emit( `ping` ), 1000 )
   }
 
   loadSquareMap( tiles, size ) {
@@ -53,9 +57,13 @@ export default class App extends React.Component {
         case `jail`:
         case `parking`:
         case `goToJail`: performedTiles.push( { type:name } ); break
-        case `city`: performedTiles.push( {
-          type:`city`, id:values[ 0 ], color:`#${values[ 1 ].toString( 16 )}`, cost:values[ 2 ], name:values[ 3 ]
-        } ); break
+        case `city`:
+          performedTiles.push( {
+            type:`city`, id:values[ 0 ], color:`#${values[ 1 ].toString( 16 )}`, cost:values[ 2 ], name:values[ 3 ]
+          } )
+          break
+
+        default: break
       }
     }
 
@@ -73,7 +81,8 @@ export default class App extends React.Component {
 
     let lastCorner = 0
     for (let i = 0, x = 1, z = 1; i < (size ** 2 - (size - 2) ** 2); ++i) {
-      const { type, id, color, cost, name } = tiles[ i ]
+      // const { type, id, color, cost, name } = tiles[ i ]
+      const { color, cost, name } = tiles[ i ]
       let rotate
       let isCorner = false
       let position = [

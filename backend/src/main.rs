@@ -2,7 +2,7 @@ mod cactu_server;
 mod game;
 mod test;
 
-use cactu_server::{ Server};
+use cactu_server::{ Server };
 use serde::ser::{ Serialize, Serializer, SerializeSeq };
 use game::socket_configurer;
 
@@ -14,7 +14,7 @@ async fn main() {
 
   server.set_ws_configurer( socket_configurer() );
   // server.add_ws_room( events::GameRoom::new( sockets_data.game ) );
-  server.run( ([127, 0, 0, 1], 80).into(), Some( ([91, 231, 24, 247], 80).into() ) ).await
+  server.run( ([0, 0, 0, 0], 3000).into(), Some( ([91, 231, 24, 247], 3000).into() ) ).await
 }
 
 fn vec_serialize<T,S>( vec:&Vec<T>, serializer:S ) -> Result<S::Ok, S::Error>
