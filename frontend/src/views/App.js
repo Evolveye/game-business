@@ -1,6 +1,6 @@
 import React from "react"
 import { Canvas, useThree } from "react-three-fiber"
-import { OrbitControls, Box, Stars } from "drei"
+import { OrbitControls, Stars } from "drei"
 
 import { CityTile, CornerTile, CenterTile } from "../components/Tile.js"
 import WS from "../components/WS.js"
@@ -33,6 +33,7 @@ export default class App extends React.Component {
 
   componentDidMount() {
     this.ws.on( `founded game`, gameBoard => {
+      console.log( gameBoard )
       const { name, values } = this.performEnum( gameBoard.boardType )
 
       switch (name) {
@@ -67,8 +68,6 @@ export default class App extends React.Component {
         default: break
       }
     }
-
-    console.log( { size, tiles:performedTiles } )
 
     this.setState( { loadedBoard: { size, tiles:performedTiles } } )
   }

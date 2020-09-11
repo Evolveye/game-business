@@ -1,60 +1,62 @@
-use crate::vec_serialize;
-use super::types::*;
-use serde::{ Serialize, Deserialize };
-
-#[derive( Deserialize, Serialize, PartialEq, Copy, Clone )]
-#[serde( rename_all( deserialize="camelCase", serialize="camelCase" ) )]
-pub enum BoardType {
-  Square( i8 ),
-}
+use super::Snowflake;
+use super::tiles::*;
+use serde::{
+  Serialize,
+  Serializer,
+  ser::SerializeSeq,
+  Deserialize
+};
 
 #[derive( Serialize )]
 #[serde( rename_all( serialize="camelCase" ) )]
 pub struct Board {
+  #[serde( serialize_with="serialize_snowflake" )]
+  id: Snowflake,
   board_type: BoardType,
-  #[serde( serialize_with="vec_serialize" )]
+  #[serde( serialize_with="serialize_vec" )]
   tiles: Vec<Tile>,
+  players: Vec<Player>
 }
 impl Board {
   pub fn new( board_type:BoardType ) -> Board {
-    match board_type {
-      // BoardType::Square( 5 ) => {
-      //   let tiles = vec![
-      //     // First edge
-      //     Tile::new( TileType::Start ),
+    let tiles = match board_type {
+      BoardType::Square( 5 ) => {
+        let tiles = vec![
+          // // First edge
+          // Tile::new( TileType::Start ),
 
-      //     Tile::new( TileType::City( 1, 0xd84e9c, "Patusy alkoholowe 1".to_owned() ) ),
-      //     Tile::new( TileType::City( 1, 0xd84e9c, "Patusy alkoholowe 2".to_owned() ) ),
-      //     Tile::new( TileType::City( 2, 0xfb9942, "Domki z zamurowanymi oknami 1".to_owned() ) ),
+          // Tile::new( TileType::City( 1, 0xd84e9c, "Patusy alkoholowe 1".to_owned() ) ),
+          // Tile::new( TileType::City( 1, 0xd84e9c, "Patusy alkoholowe 2".to_owned() ) ),
+          // Tile::new( TileType::City( 2, 0xfb9942, "Domki z zamurowanymi oknami 1".to_owned() ) ),
 
-      //     // Second edge
-      //     Tile::new( TileType::Jail ),
+          // // Second edge
+          // Tile::new( TileType::Jail ),
 
-      //     Tile::new( TileType::City( 2, 0xfb9942, "Domki z zamurowanymi oknami 2".to_owned() ) ),
-      //     Tile::new( TileType::City( 3, 0xfc3e3f, "Czarna dzielnia 1".to_owned() ) ),
-      //     Tile::new( TileType::City( 3, 0xfc3e3f, "Czarna dzielnia 2".to_owned() ) ),
+          // Tile::new( TileType::City( 2, 0xfb9942, "Domki z zamurowanymi oknami 2".to_owned() ) ),
+          // Tile::new( TileType::City( 3, 0xfc3e3f, "Czarna dzielnia 1".to_owned() ) ),
+          // Tile::new( TileType::City( 3, 0xfc3e3f, "Czarna dzielnia 2".to_owned() ) ),
 
-      //     // Third edge
-      //     Tile::new( TileType::Parking ),
+          // // Third edge
+          // Tile::new( TileType::Parking ),
 
-      //     Tile::new( TileType::City( 4, 0xf7f844, "Kuweta 1".to_owned() ) ),
-      //     Tile::new( TileType::City( 3, 0xfc3e3f, "Czarna dzielnia 3".to_owned() ) ),
-      //     Tile::new( TileType::City( 4, 0xf7f844, "Kuweta 2".to_owned() ) ),
+          // Tile::new( TileType::City( 4, 0xf7f844, "Kuweta 1".to_owned() ) ),
+          // Tile::new( TileType::City( 3, 0xfc3e3f, "Czarna dzielnia 3".to_owned() ) ),
+          // Tile::new( TileType::City( 4, 0xf7f844, "Kuweta 2".to_owned() ) ),
 
-      //     // Fourth edge
-      //     Tile::new( TileType::GoToJail ),
+          // // Fourth edge
+          // Tile::new( TileType::GoToJail ),
 
-      //     Tile::new( TileType::City( 5, 0x0171ae, "Pola jagodowe 1".to_owned() ) ),
-      //     Tile::new( TileType::City( 5, 0x0171ae, "Pola jagodowe 2".to_owned() ) ),
-      //     Tile::new( TileType::City( 5, 0x0171ae, "Pola jagodowe 3".to_owned() ) ),
-      //   ];
+          // Tile::new( TileType::City( 5, 0x0171ae, "Pola jagodowe 1".to_owned() ) ),
+          // Tile::new( TileType::City( 5, 0x0171ae, "Pola jagodowe 2".to_owned() ) ),
+          // Tile::new( TileType::City( 5, 0x0171ae, "Pola jagodowe 3".to_owned() ) ),
+        ];
 
-      //   if tiles.len() != 16 {
-      //     panic!( "BoardType with size 5 should had 16 tiles!" );
-      //   }
+        if tiles.len() != 16 {
+          panic!( "BoardType with size 5 should had 16 tiles!" );
+        }
 
-      //   Board { board_type, tiles }
-      // },
+        tiles
+      },
       BoardType::Square( 9 ) => {
         let tiles = vec![
           // First edge
@@ -106,18 +108,69 @@ impl Board {
           panic!( "BoardType with size 9 should had 32 tiles!" );
         }
 
-        Board { board_type, tiles }
+        tiles
       },
-      BoardType::Square( size ) => {
-        Board {
-          board_type: BoardType::Square( size ),
-          tiles: Vec::new(),
-        }
-      }
+      BoardType::Square( _ ) => Vec::new()
+    };
+
+    Board {
+      id: Snowflake::new(),
+      board_type,
+      tiles,
+      players: Vec::new(),
     }
   }
 
   pub fn get_type( &self ) -> BoardType {
     self.board_type
   }
+  pub fn get_id( &self ) -> Snowflake {
+    self.id
+  }
+
+  pub fn add_player( &mut self, player_id:Snowflake ) {
+    self.players.push( Player::new( player_id, self.id ) )
+  }
+  pub fn remove_player( &mut self, player_id:Snowflake ) {
+    self.players.retain( |p| p.id == player_id )
+  }
+}
+
+#[derive( Deserialize, Serialize, PartialEq, Copy, Clone )]
+#[serde( rename_all( deserialize="camelCase", serialize="camelCase" ) )]
+pub enum BoardType {
+  Square( i8 ),
+}
+
+#[derive( Serialize )]
+pub struct Player {
+  #[serde( serialize_with="serialize_snowflake" )]
+  id: Snowflake,
+  #[serde( serialize_with="serialize_snowflake" )]
+  board_id: Snowflake,
+  tile_index: u8,
+}
+impl Player {
+  pub fn new( id:Snowflake, board_id:Snowflake ) -> Player {
+    Player {
+      id,
+      board_id,
+      tile_index: 0,
+    }
+  }
+}
+
+fn serialize_snowflake<S>( snowflake:&Snowflake, serializer:S ) -> Result<S::Ok, S::Error>
+where S: Serializer {
+  serializer.serialize_str( snowflake.get_value().to_string().as_str() )
+}
+fn serialize_vec<T,S>( vec:&Vec<T>, serializer:S ) -> Result<S::Ok, S::Error>
+where S:Serializer, T:Serialize {
+  let mut seq = serializer.serialize_seq( Some( vec.len() ) )?;
+
+  for element in vec {
+    seq.serialize_element( &element )?;
+  }
+
+  seq.end()
 }

@@ -175,6 +175,10 @@ impl Snowflake {
 
     Snowflake( ((1 as u64) << (63 as u64)) | (rand & ((1 << 16) - 1)) << 48 | time )
   }
+
+  pub fn get_value( &self ) -> u64 {
+    self.0
+  }
 }
 impl ToString for Snowflake {
   fn to_string( &self ) -> String {

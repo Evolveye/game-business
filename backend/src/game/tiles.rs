@@ -1,4 +1,3 @@
-use super::Snowflake;
 use serde::{ Serialize };
 
 #[derive( Serialize )]
@@ -21,5 +20,3 @@ impl Tile {
     Tile { type_enum }
   }
 }
-
-pub struct Player( pub Snowflake );

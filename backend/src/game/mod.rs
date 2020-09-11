@@ -1,57 +1,53 @@
 mod board;
-mod types;
+mod tiles;
 
 use futures::lock::MutexGuard;
-use std::sync::{ Arc, Mutex };
-use serde::{ Deserialize, Serialize };
+use std::{
+  collections::HashMap,
+  sync::{ Arc, Mutex },
+};
+use serde::{ Serialize, Deserialize };
 use serde_json::{ Value, json };
 
 use board::*;
-use types::*;
 use crate::cactu_server::{ Snowflake, Socket };
 
 pub struct Game {
-  players_in_lobby: Vec<Player>,
-  boards: Vec<Board>,
+  boards: HashMap<u64, Board>,
 }
 
 impl Game {
   pub fn new() -> Game {
     Game {
-      players_in_lobby: Vec::new(),
-      boards: Vec::new(),
+      boards: HashMap::new(),
     }
   }
   pub fn new_mutex() -> Arc<Mutex<Game>> {
     Arc::new( Mutex::new( Game::new() ) )
   }
 
-  fn create_player_with_id( &mut self, id:Snowflake ) {
-    self.players_in_lobby.push( Player( id ) )
+  fn remove_player( &mut self, player_id:Snowflake ) {
+    for board in self.boards.values_mut() {
+      board.remove_player( player_id );
+    }
   }
-  fn remove_player( &mut self, id:Snowflake ) {
-    self.players_in_lobby.retain( |p| p.0 == id )
-  }
+  fn player_want_to_join_to( &mut self, player_id:Snowflake, board_type:BoardType ) -> Result<Value,()> {
+    if let Some( board ) = self.boards.values_mut().find( |b| b.get_type() == board_type ) {
+      board.add_player( player_id );
 
-  fn player_want_to_join_to( &mut self, board_type:BoardType ) -> Result<Value,()> {
-    if let Some( board ) = self.boards.iter().find( |b| b.get_type() == board_type ) {
       Ok(json!( board ))
     } else {
-      let board = Board::new( board_type );
+      let mut board = Board::new( board_type );
+
+      board.add_player( player_id );
+
       let json = json!( board );
 
-      self.boards.push( board );
+      self.boards.insert( board.get_id().get_value(), board );
+
       Ok( json )
     }
   }
-  // pub fn create_board( &mut self, board_type:BoardType ) -> &Board {
-  //   self.boards.push( Board::new( board_type ) );
-  //   &self.boards.last().unwrap()
-  // }
-
-  // pub fn find_opened_board( &self, board_type:&BoardType ) -> Option<&Board> {
-  //   self.boards.iter().find( |board| board.board_type == *board_type )
-  // }
 
   pub fn socket_configurer<'a>( game_mutex:Arc<Mutex<Game>> ) -> impl FnMut( &mut MutexGuard<Socket> ) + Send + Sync + 'a {
     let game_mutex = Arc::clone( &game_mutex );
@@ -62,7 +58,6 @@ impl Game {
       let id = socket.get_id();
 
       println!( " [i] {}::connected", id.to_string() );
-      game_mutex.lock().unwrap().create_player_with_id( id );
 
       socket.emit( format!( "Connected succesfully with id {}", id.to_string() ).as_str() );
       socket.on_disconnection( move |s| {
@@ -82,7 +77,7 @@ impl Game {
           GameEvent::Nothing => (),
           GameEvent::Ping => Game::emit( s, "pong", s.get_id().to_string() ),
           GameEvent::SearchGame( board_type ) => {
-            if let Ok( board_data ) = game.player_want_to_join_to( board_type ) {
+            if let Ok( board_data ) = game.player_want_to_join_to( s.get_id(), board_type ) {
               Game::emit( s, "founded game", board_data )
             } else {
               Game::emit( s, "not founded game", board_type )
