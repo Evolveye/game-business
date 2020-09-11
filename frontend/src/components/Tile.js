@@ -139,7 +139,7 @@ export class CornerTile extends Tile {
       rotation={[ 0, isCorner ? 0 : Math.PI / 180 * rotate, 0 ]}
       position={position}
     >
-      <Text {...textAttrs} position={[ 0, this.height / 2 + 0.1, 0 ]}>Pustynia</Text>
+      <Text {...textAttrs} position={[ 0, this.height / 2 + 0.01, 0 ]}>Pustynia</Text>
       <Box args={[ 2, this.height, 2 ]} material={this.materialArray} />
     </group>
   }
@@ -148,9 +148,9 @@ export class CornerTile extends Tile {
 export class CenterTile extends Tile {
   render() {
     const { position, args } = this.props
-    const { rotate } = this.state
     const loader = new THREE.TextureLoader()
     const texGrass = loader.load( imgGrass )
+
     const texTileSide = loader.load( imgTileSide )
     this.materialArray[ 0 ].map = texTileSide
     this.materialArray[ 1 ].map = texTileSide

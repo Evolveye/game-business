@@ -171,8 +171,9 @@ export default class App extends React.Component {
 
 function Camera() {
   const { camera } = useThree()
+  const isMobile = /mobile/i.test( navigator.userAgent )
 
   camera.position.set( 0, 10, 0 )
 
-  return <OrbitControls rotateSpeed={1} />
+  return <OrbitControls rotateSpeed={isMobile ? 1.1 : 0.7} />
 }
