@@ -2,8 +2,8 @@ import React from "react"
 import { Canvas, useThree } from "react-three-fiber"
 import { OrbitControls, Box, Stars } from "drei"
 
-import { CityTile, CornerTile } from "./Tile.js"
-import WS from "../utils/WS.js"
+import { CityTile, CornerTile } from "../components/Tile.js"
+import WS from "../components/WS.js"
 // import Color from "../utils/colors.js"
 
 import "./App.css"

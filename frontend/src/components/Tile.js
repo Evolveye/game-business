@@ -1,9 +1,9 @@
 import React from "react"
 import { Text, Box } from "drei"
 import * as THREE from "three"
-import imgTile from "./test.png"
-import imgFrame from "./frame.png"
-import imgSand from "./sand.png"
+import imgTile from "../images/test.png"
+import imgFrame from "../images/frame.png"
+import imgSand from "../images/sand.png"
 
 class Tile extends React.Component {
   // This reference will give us direct access to the mesh
