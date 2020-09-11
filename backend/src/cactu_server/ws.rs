@@ -141,7 +141,7 @@ impl<'a> Socket<'a> {
   pub fn get_id( &self ) -> Snowflake {
     self.id
   }
-  pub fn send( & mut self, message:&str ) {
+  pub fn emit( & mut self, message:&str ) {
     if let Err( err ) = block_on( self.sink.send( message.into() ) ) {
       println!( "`{}`  -->  {}", message, err );
     }
@@ -172,8 +172,6 @@ impl Snowflake {
     let mut thread_rng = rand::thread_rng();
     let time = SystemTime::now().duration_since( UNIX_EPOCH ).unwrap().as_millis() as u64;
     let rand = thread_rng.gen::<u64>();
-
-    println!( "{}", ((1 as u64) << (63 as u64)) | (rand & ((1 << 16) - 1)) << 48 | time );
 
     Snowflake( ((1 as u64) << (63 as u64)) | (rand & ((1 << 16) - 1)) << 48 | time )
   }

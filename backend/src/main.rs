@@ -2,7 +2,7 @@ mod cactu_server;
 mod game;
 mod test;
 
-use cactu_server::{ Server, Snowflake };
+use cactu_server::Server;
 use serde::ser::{ Serialize, Serializer, SerializeSeq };
 use game::Game;
 
