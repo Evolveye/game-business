@@ -15,6 +15,7 @@ use tokio_tungstenite::{
   tungstenite::protocol::{ Message, Role },
   WebSocketStream
 };
+use rand::Rng;
 
 pub struct WebSocketController {
   storage: Arc<Mutex<Storage<'static>>>,
@@ -114,7 +115,7 @@ impl<'a> Storage<'a> {
 }
 
 pub struct Socket<'a> {
-  id: u128,
+  id: Snowflake,
   sink: SplitSink<WebSocketStream<Upgraded>, Message>,
   stream: SplitStream<WebSocketStream<Upgraded>>,
   on_message_handler: Option<Box<dyn FnMut( &mut Self, String ) + Send + 'a>>,
@@ -123,10 +124,9 @@ pub struct Socket<'a> {
 impl<'a> Socket<'a> {
   pub fn new( ws_stream:WebSocketStream<Upgraded> ) -> Socket<'a> {
     let (sink, stream) = ws_stream.split();
-    let id = SystemTime::now().duration_since( UNIX_EPOCH ).unwrap().as_millis();
 
     Socket {
-      id,
+      id: Snowflake::new(),
       sink,
       stream,
       on_message_handler: None,
@@ -138,7 +138,7 @@ impl<'a> Socket<'a> {
     self.stream.next().await.unwrap().unwrap()
   }
 
-  pub fn get_id( &self ) -> u128 {
+  pub fn get_id( &self ) -> Snowflake {
     self.id
   }
   pub fn send( & mut self, message:&str ) {
@@ -163,3 +163,28 @@ impl PartialEq for Socket<'_> {
 }
 
 pub trait Room {}
+
+/// Very simple generator of uniquie identifiers
+#[derive( Copy, Clone )]
+pub struct Snowflake( u64 );
+impl Snowflake {
+  pub fn new() -> Snowflake {
+    let mut thread_rng = rand::thread_rng();
+    let time = SystemTime::now().duration_since( UNIX_EPOCH ).unwrap().as_millis() as u64;
+    let rand = thread_rng.gen::<u64>();
+
+    println!( "{}", ((1 as u64) << (63 as u64)) | (rand & ((1 << 16) - 1)) << 48 | time );
+
+    Snowflake( ((1 as u64) << (63 as u64)) | (rand & ((1 << 16) - 1)) << 48 | time )
+  }
+}
+impl ToString for Snowflake {
+  fn to_string( &self ) -> String {
+    self.0.to_string()
+  }
+}
+impl PartialEq for Snowflake {
+  fn eq( &self, other:&Snowflake ) -> bool {
+    self.0 == other.0
+  }
+}

@@ -1,25 +1,6 @@
 use crate::vec_serialize;
 use serde::{ Serialize, Deserialize };
 
-// pub struct Game {
-//   boards: Vec<Board>,
-// }
-
-// impl Game {
-//   pub fn new() -> Game {
-//     Game { boards:vec![] }
-//   }
-
-//   pub fn create_board( &mut self, board_type:BoardType ) -> &Board {
-//     self.boards.push( Board::new( board_type ) );
-//     &self.boards.last().unwrap()
-//   }
-
-//   pub fn find_opened_board( &self, board_type:&BoardType ) -> Option<&Board> {
-//     self.boards.iter().find( |board| board.board_type == *board_type )
-//   }
-// }
-
 #[derive( Deserialize, Serialize, PartialEq )]
 #[serde( rename_all( deserialize="camelCase", serialize="camelCase" ) )]
 pub enum BoardType {
