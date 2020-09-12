@@ -1,11 +1,13 @@
-use super::Snowflake;
-use super::tiles::*;
+use rand::Rng;
 use serde::{
   Serialize,
   Serializer,
   ser::SerializeSeq,
   Deserialize
 };
+
+use super::Snowflake;
+use super::tiles::*;
 
 #[derive( Serialize )]
 #[serde( rename_all( serialize="camelCase" ) )]
@@ -134,6 +136,17 @@ impl Board {
   pub fn remove_player( &mut self, player_id:Snowflake ) {
     self.players.retain( |p| p.id == player_id )
   }
+  pub fn move_player_by( &mut self, player_id:Snowflake, move_value:u8 ) -> Result<u8,String> {
+    if let Some( player ) = self.players.iter_mut().find( |p| p.id == player_id ) {
+      let new_tile_index = (move_value + player.tile_index) % self.tiles.len() as u8;
+
+      player.move_to( new_tile_index );
+
+      Ok( new_tile_index )
+    } else {
+      Err( format!( "Player with id {} not found", player_id.to_string() ) )
+    }
+  }
 }
 
 #[derive( Deserialize, Serialize, PartialEq, Copy, Clone )]
@@ -143,20 +156,26 @@ pub enum BoardType {
 }
 
 #[derive( Serialize )]
+#[serde( rename_all( deserialize="camelCase", serialize="camelCase" ) )]
 pub struct Player {
   #[serde( serialize_with="serialize_snowflake" )]
   id: Snowflake,
   #[serde( serialize_with="serialize_snowflake" )]
   board_id: Snowflake,
   tile_index: u8,
+  color: u32,
 }
 impl Player {
-  pub fn new( id:Snowflake, board_id:Snowflake ) -> Player {
+  fn new( id:Snowflake, board_id:Snowflake ) -> Player {
     Player {
       id,
       board_id,
       tile_index: 0,
+      color: rand::thread_rng().gen_range( 1, 1 << 24 ),
     }
+  }
+  fn move_to( &mut self, tile_index:u8 ) {
+    self.tile_index = tile_index;
   }
 }
 

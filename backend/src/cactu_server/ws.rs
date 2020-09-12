@@ -146,9 +146,9 @@ impl<'a> Socket<'a> {
       println!( "`{}`  -->  {}", message, err );
     }
   }
-  // pub fn broadcast( &mut self, message:String ) {
-  //   todo!();
-  // }
+  pub fn broadcast( &mut self, _message:&str ) {
+    todo!();
+  }
   pub fn on_message( &mut self, handler:impl FnMut( &mut Self, String ) + Send + 'a ) {
     self.on_message_handler = Some( Box::new( handler ) );
   }

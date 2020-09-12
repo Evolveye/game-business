@@ -14,11 +14,12 @@ export default class App extends React.Component {
 
   state = {
     loadedBoard: { size:0, tiles:[] },
-    active: false,
-    hovered: false,
     gameBoard: {},
     spacingBetweenTiles: 0.1,
   }
+  tiles = []
+  players = []
+  player = null
 
   performEnum( enumObj ) {
     if (typeof enumObj === `string`) return { name:enumObj, values:[] }
@@ -32,20 +33,35 @@ export default class App extends React.Component {
   }
 
   componentDidMount() {
-    this.ws.on( `founded game`, gameBoard => {
-      console.log( gameBoard )
-      const { name, values } = this.performEnum( gameBoard.boardType )
+    this.ws.on( `founded game`, data => {
+      const { playerId, boardData } = data
+      const { boardType, players, tiles } = boardData
+      const { name, values } = this.performEnum( boardType )
+
+      this.setState( { player:players.find( p => p.id === playerId ), players } )
 
       switch (name) {
-        case `square`: this.loadSquareMap( gameBoard.tiles, values[ 0 ] ); break
+        case `square`: this.loadSquareMap( tiles, values[ 0 ] ); break
         default: break
       }
     } )
 
-    this.ws.emit( `searchGame`, { square:9 } )
+    this.ws.on( `move`, newTileIndex => {
+      if (typeof newTileIndex != `number`) return console.log( newTileIndex )
+      const { player } = this.state
+      const tileFrom = this.tiles[ player.tileIndex ]
+      const tileTo = this.tiles[ newTileIndex ]
 
-    this.ws.on( `pong`, console.log )
-    setInterval( () => this.ws.emit( `ping` ), 1000 )
+      tileFrom.removePlayer( player )
+      tileTo.addPlayer( player )
+
+      player.tileIndex = newTileIndex
+    } )
+
+    this.ws.emit( `searchGame`, { square:9 } )
+    setInterval( () => this.ws.emit( `move`, this.state.player.boardId ), 1000 )
+
+    window.game = this
   }
 
   loadSquareMap( tiles, size ) {
@@ -75,7 +91,7 @@ export default class App extends React.Component {
   render() {
     /** @type {Tile[]} */
     const boxes = []
-    const { loadedBoard, spacingBetweenTiles } = this.state
+    const { loadedBoard, spacingBetweenTiles, players } = this.state
     const { size, tiles } = loadedBoard
     const positionMultiplier = 1 + spacingBetweenTiles
 
@@ -90,23 +106,6 @@ export default class App extends React.Component {
         0,
         (z - (size + 1) / 2) * positionMultiplier,
       ]
-
-      // const paintedTiles = {}
-      // let color = 0x33333333
-      // if (id) {
-      //   if (!(id in paintedTiles)) {
-      //     let i = 0
-      //     let color = Color.getPaletteRandom()
-
-      //     while (i++ < 99 && Object.values( paintedTiles ).includes( color )) {
-      //       color = Color.getPaletteRandom()
-      //     }
-
-      //     paintedTiles[ id ] = color
-      //   }
-
-      //   color = paintedTiles[ id ]
-      // }
 
       if (true || i % (size - 1) !== 0) {
         if (x === 1)    position[ 0 ] -= .5
@@ -129,24 +128,20 @@ export default class App extends React.Component {
         rotate = 270
       }
 
+      const commonData = {
+        key: i, //`${x};${z}`,
+        ref: ref => this.tiles[ i ] = ref,
+        players: players.filter( p => p.tileIndex === i ),
+        color,
+        position,
+        rotate,
+        isCorner,
+      }
+
       if (isCorner) {
-        boxes.push( <CornerTile
-          isCorner={isCorner}
-          key={`${x};${z}`}
-          rotate={rotate}
-          color={color}
-          position={position}
-        /> )
+        boxes.push( <CornerTile {...commonData} /> )
       } else {
-        boxes.push( <CityTile
-          name={name}
-          cost={cost}
-          isCorner={isCorner}
-          key={`${x};${z}`}
-          rotate={rotate}
-          color={color}
-          position={position}
-        /> )
+        boxes.push( <CityTile {...commonData} name={name} cost={cost} /> )
       }
 
       if (x !== size && z === 1) x++

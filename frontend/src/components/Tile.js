@@ -15,6 +15,7 @@ class Tile extends React.Component {
   state = {
     color: this.props.color || 0xaaaaaa,
     rotate: this.props.rotate || 0,
+    players: [],
   }
 
   active = false
@@ -58,24 +59,27 @@ class Tile extends React.Component {
       this.active = false
     }
   }
-
   componentDidMount() {
     // requestAnimationFrame( this.update )
   }
 
-  update = () => {
-    requestAnimationFrame( this.update )
-  }
+  removePlayer( { id } ) {
+    this.setState( s => ({
+      players: s.players.filter( p => p.id != id )
+    }) )
 
-  getRandomColor() {
-    return Math.floor( Math.random() * 0xffffff )
+  }
+  addPlayer( player ) {
+    this.setState( s => ({
+      players: [ player, ...s.players ]
+    }) )
   }
 }
 
 export class CityTile extends Tile {
   render() {
     const { position, isCorner, name, cost } = this.props
-    const { rotate, color } = this.state
+    const { rotate, color, players } = this.state
     const loader = new THREE.TextureLoader()
     // const material = new THREE.MeshF
     const texTile = loader.load( imgTile )
@@ -100,6 +104,12 @@ export class CityTile extends Tile {
     this.materialArray[ 4 ].map = texTileSide
     this.materialArray[ 5 ].map = texTileSide
 
+    const performedPlayers = players.map( player => (
+      <Box key={player.id} args={[ .3, .3, .3 ]} position={[ 0, 1, 0 ]}>
+        <meshBasicMaterial attach="material" color={player.color} />
+      </Box>
+    ) )
+
     return <group
       {...this.events}
       rotation={[ 0, isCorner ? 0 : Math.PI / 180 * rotate, 0 ]}
@@ -111,14 +121,19 @@ export class CityTile extends Tile {
       <Box args={[ 1, this.height, 0.4 ]} position={[ 0, 0, -0.8 ]}>
         <meshBasicMaterial attach="material" map={texFrame} color={color} />
       </Box>
+      {performedPlayers}
     </group>
   }
 }
 
 export class CornerTile extends Tile {
+  players = []
+
+  test(){}
+
   render() {
     const { position, isCorner } = this.props
-    const { rotate } = this.state
+    const { rotate, players } = this.state
     const loader = new THREE.TextureLoader()
     const texSand = loader.load( imgSand )
     const texTileSide = loader.load( imgTileSide )
@@ -134,6 +149,12 @@ export class CornerTile extends Tile {
     this.materialArray[ 4 ].map = texTileSide
     this.materialArray[ 5 ].map = texTileSide
 
+    const performedPlayers = players.map( player => (
+      <Box key={player.id} args={[ .3, .3, .3 ]} position={[ 0, 1, 0 ]}>
+        <meshBasicMaterial attach="material" color={player.color} />
+      </Box>
+    ) )
+
     return <group
       {...this.events}
       rotation={[ 0, isCorner ? 0 : Math.PI / 180 * rotate, 0 ]}
@@ -141,6 +162,7 @@ export class CornerTile extends Tile {
     >
       <Text {...textAttrs} position={[ 0, this.height / 2 + 0.01, 0 ]}>Pustynia</Text>
       <Box args={[ 2, this.height, 2 ]} material={this.materialArray} />
+      {performedPlayers}
     </group>
   }
 }
