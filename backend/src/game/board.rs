@@ -6,7 +6,7 @@ use serde::{
   Deserialize
 };
 
-use super::Snowflake;
+use super::{ Snowflake, SnowFlakeTrait };
 use super::tiles::*;
 
 #[derive( Serialize )]
@@ -181,7 +181,7 @@ impl Player {
 
 fn serialize_snowflake<S>( snowflake:&Snowflake, serializer:S ) -> Result<S::Ok, S::Error>
 where S: Serializer {
-  serializer.serialize_str( snowflake.get_value().to_string().as_str() )
+  serializer.serialize_str( snowflake.to_string().as_str() )
 }
 fn serialize_vec<T,S>( vec:&Vec<T>, serializer:S ) -> Result<S::Ok, S::Error>
 where S:Serializer, T:Serialize {

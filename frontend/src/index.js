@@ -7,10 +7,14 @@ import * as serviceWorker from "./components/serviceWorker"
 import "./normalize.css"
 import "./index.css"
 
+// ReactDOM.render(
+//   <React.StrictMode>
+//     <App />
+//   </React.StrictMode>,
+//   document.getElementById( `app` )
+// )
 ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  <App />,
   document.getElementById( `app` )
 )
 

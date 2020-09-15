@@ -11,7 +11,7 @@ use serde_json::{ Value, json };
 use rand::Rng;
 
 use board::*;
-use crate::cactu_server::{ Snowflake, Socket };
+use crate::cactu_server::{ Snowflake, SnowFlakeTrait, Socket };
 
 pub struct Game {
   boards: HashMap<u64, Board>,
@@ -44,7 +44,7 @@ impl Game {
 
       let json = json!( board );
 
-      self.boards.insert( board.get_id().get_value(), board );
+      self.boards.insert( board.get_id(), board );
 
       Ok( json )
     }
@@ -87,19 +87,23 @@ impl Game {
 
         match game_event {
           GameEvent::Nothing => (),
-          GameEvent::Ping => Game::emit( s, "pong", s.get_id().to_string() ),
+          GameEvent::Ping => {
+            s.emit( Game::make_json( "pong", s.get_id().to_string() ).as_str() );
+          },
           GameEvent::SearchGame( board_type ) => {
             if let Ok( board_data ) = game.player_want_to_join_to( s.get_id(), board_type ) {
-              Game::emit( s, "founded game", json!( { "boardData":board_data, "playerId":s.get_id().to_string() } ) )
+              s.broadcast( Game::make_json( "board update", board_data.clone() ).as_str() );
+              s.emit( Game::make_json( "founded game", json!( { "boardData":board_data, "playerId":s.get_id().to_string() } ) ).as_str() );
             } else {
-              Game::emit( s, "not founded game", board_type )
+              s.emit( Game::make_json( "not founded game", board_type ).as_str() );
             }
           },
           GameEvent::Move( board_id ) => {
-            if let Ok( new_tile_index ) = game.move_player_on_board( s.get_id(), board_id ) {
-              Game::broadcast( s, "move", new_tile_index )
-            } else {
-              Game::emit( s, "move", "error" )
+            match game.move_player_on_board( s.get_id(), board_id ) {
+              Ok( new_tile_index ) => s.broadcast_and_emit(
+                Game::make_json( "move", json!( { "newTileIndex":new_tile_index, "playerId":s.get_id().to_string() } ) ).as_str()
+              ),
+              Err( err ) => s.emit( Game::make_json( "move", err ).as_str() )
             }
           },
         }
@@ -107,11 +111,8 @@ impl Game {
     }
   }
 
-  fn emit<'a>( socket:&mut Socket, event_name:&str, data:impl Serialize ) {
-    socket.emit( json!( { "event":event_name, "data":data } ).to_string().as_str() )
-  }
-  fn broadcast<'a>( socket:&mut Socket, event_name:&str, data:impl Serialize ) {
-    socket.broadcast( json!( { "event":event_name, "data":data } ).to_string().as_str() )
+  fn make_json( event_name:&str, data:impl Serialize ) -> String {
+    json!( { "event":event_name, "data":data } ).to_string()
   }
 }
 

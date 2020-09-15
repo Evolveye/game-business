@@ -17,7 +17,7 @@ use hyper::{
   Method, StatusCode, Body, Request, Response,
 };
 
-pub use ws::{ Snowflake, Room, Socket, Value, json };
+pub use ws::{ Snowflake, SnowFlakeTrait, Room, Socket, Value, json };
 
 const FRONTEND_BUILD_PATH: &str = "../frontend/build/";
 

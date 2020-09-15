@@ -65,7 +65,7 @@ class Tile extends React.Component {
 
   removePlayer( { id } ) {
     this.setState( s => ({
-      players: s.players.filter( p => p.id != id )
+      players: s.players.filter( p => p.id !== id )
     }) )
 
   }

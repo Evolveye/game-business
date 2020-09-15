@@ -34,23 +34,33 @@ export default class App extends React.Component {
 
   componentDidMount() {
     this.ws.on( `founded game`, data => {
+      console.log( data )
       const { playerId, boardData } = data
       const { boardType, players, tiles } = boardData
       const { name, values } = this.performEnum( boardType )
 
-      this.setState( { player:players.find( p => p.id === playerId ), players } )
+      this.player = players.find( p => p.id === playerId )
+      this.players = players
 
       switch (name) {
         case `square`: this.loadSquareMap( tiles, values[ 0 ] ); break
         default: break
       }
     } )
+    this.ws.on( `board update`, data => {
+      this.players = data.players
+    } )
 
-    this.ws.on( `move`, newTileIndex => {
-      if (typeof newTileIndex != `number`) return console.log( newTileIndex )
-      const { player } = this.state
+    this.ws.on( `move`, data => {
+      if (typeof data === `string`) return console.warn( data )
+      const { playerId, newTileIndex } = data
+      const player = this.players.find( ({ id }) => id === playerId )
+
+      if (!player) return console.warn( `Player with id ${playerId} not found` )
+
       const tileFrom = this.tiles[ player.tileIndex ]
       const tileTo = this.tiles[ newTileIndex ]
+
 
       tileFrom.removePlayer( player )
       tileTo.addPlayer( player )
@@ -59,7 +69,7 @@ export default class App extends React.Component {
     } )
 
     this.ws.emit( `searchGame`, { square:9 } )
-    setInterval( () => this.ws.emit( `move`, this.state.player.boardId ), 1000 )
+    setInterval( () => this.ws.emit( `move`, this.player?.boardId ), 1000 )
 
     window.game = this
   }
@@ -91,7 +101,7 @@ export default class App extends React.Component {
   render() {
     /** @type {Tile[]} */
     const boxes = []
-    const { loadedBoard, spacingBetweenTiles, players } = this.state
+    const { loadedBoard, spacingBetweenTiles } = this.state
     const { size, tiles } = loadedBoard
     const positionMultiplier = 1 + spacingBetweenTiles
 
@@ -131,7 +141,7 @@ export default class App extends React.Component {
       const commonData = {
         key: i, //`${x};${z}`,
         ref: ref => this.tiles[ i ] = ref,
-        players: players.filter( p => p.tileIndex === i ),
+        players: this.players.filter( p => p.tileIndex === i ),
         color,
         position,
         rotate,
